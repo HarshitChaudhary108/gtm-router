@@ -604,3 +604,7 @@ scripts/smoke.ts    live provider smoke test
 scripts/cli.ts      interactive CLI
 docs/MCP.md         MCP + Claude.ai connector setup
 ```
+
+## Maintainer
+
+Maintained by [Harshit Ch.](https://github.com/HarshitChaudhary108).
