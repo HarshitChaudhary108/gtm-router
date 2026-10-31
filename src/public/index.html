@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GTM Router — web research</title>
+  <style>
+    :root {
+      --bg: #0a0e12;
+      --panel: #111820;
+      --panel-2: #0d141b;
+      --border: #1f2d3a;
+      --text: #e5ebf1;
+      --muted: #8fa3b5;
+      --accent: #34d399;
+      --danger: #f87171;
+      --warn: #fbbf24;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(1200px 600px at 50% -10%, #12202a 0%, var(--bg) 60%);
+      color: var(--text);
+      font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+    main { max-width: 880px; margin: 0 auto; padding: 48px 20px 80px; }
+    header { margin-bottom: 28px; }
+    h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.02em; }
+    h1 span { color: var(--accent); }
+    .sub { color: var(--muted); margin: 0; font-size: 14px; }
+    .banner {
+      border: 1px solid #4a3a12; background: #1c1708; color: var(--warn);
+      padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 18px;
+    }
+    .banner.error { border-color: #4a1d1d; background: #1c0c0c; color: var(--danger); }
+    .panel {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+      padding: 18px; margin-bottom: 18px;
+    }
+    label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 8px; }
+    textarea {
+      width: 100%; min-height: 84px; resize: vertical; padding: 12px 14px;
+      background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+      border-radius: 8px; font: inherit; outline: none;
+    }
+    textarea:focus { border-color: #2f6f57; box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.08); }
+    .row { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    button {
+      font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--panel-2); color: var(--text); padding: 8px 14px;
+    }
+    button:hover:not(:disabled) { border-color: #2f6f57; }
+    button:disabled { opacity: 0.55; cursor: progress; }
+    #run { background: var(--accent); border-color: var(--accent); color: #04130d; font-weight: 600; padding: 9px 22px; }
+    .examples { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .examples button { font-size: 12.5px; color: var(--muted); padding: 5px 10px; }
+    .status { color: var(--muted); font-size: 13px; min-height: 18px; }
+    h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 10px; }
+    #answer { white-space: pre-wrap; margin: 0; }
+    .meta { color: var(--muted); font-size: 12.5px; margin-top: 10px; font-family: var(--mono); }
+    ul.sources { list-style: none; margin: 0; padding: 0; }
+    ul.sources li { padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+    ul.sources li:last-child { border-bottom: none; }
+    ul.sources a { color: var(--accent); text-decoration: none; }
+    ul.sources a:hover { text-decoration: underline; }
+    ul.sources .url { display: block; color: var(--muted); font-size: 12px; font-family: var(--mono); overflow-wrap: anywhere; }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+    td { font-family: var(--mono); font-size: 12.5px; }
+    td:first-child { font-family: inherit; }
+    .ok { color: var(--accent); }
+    .bad { color: var(--danger); }
+    details { margin-top: 4px; }
+    summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+    pre {
+      background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
+      padding: 12px; overflow: auto; font-family: var(--mono); font-size: 12px;
+      max-height: 420px; white-space: pre-wrap; overflow-wrap: anywhere;
+    }
+    .page-preview { max-height: 260px; }
+    .candidate { display: block; width: 100%; text-align: left; margin-top: 8px; font-size: 13px; }
+    .candidate span { color: var(--muted); display: block; font-size: 11.5px; font-family: var(--mono); overflow-wrap: anywhere; }
+    footer { color: #5a6b7b; font-size: 12px; margin-top: 32px; text-align: center; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>GTM <span>Router</span></h1>
+    <p class="sub">Natural language → registered actions → Tavily search · Jina Reader · MoltSets data → normalized result.</p>
+  </header>
+
+  <div id="config-warning" class="banner" hidden></div>
+  <div id="error-banner" class="banner error" hidden></div>
+
+  <section class="panel">
+    <form id="form">
+      <label for="input">Research request</label>
+      <textarea id="input" placeholder="e.g. Research Acme, find its official pricing page, and extract the page content."></textarea>
+      <div class="row">
+        <button id="run" type="submit">Run</button>
+        <span id="status" class="status"></span>
+      </div>
+    </form>
+    <div class="examples" id="examples"></div>
+  </section>
+
+  <section id="result" hidden>
+    <div class="panel">
+      <h2>Answer</h2>
+      <p id="answer"></p>
+      <div id="result-meta" class="meta"></div>
+      <div id="candidates"></div>
+    </div>
+
+    <div class="panel" id="companies-panel" hidden>
+      <h2>Companies</h2>
+      <table>
+        <thead><tr><th>Company</th><th>Industry</th><th>Employees</th><th>Revenue</th><th>Location</th><th>LinkedIn</th></tr></thead>
+        <tbody id="companies"></tbody>
+      </table>
+    </div>
+
+    <div class="panel" id="people-panel" hidden>
+      <h2>People</h2>
+      <table>
+        <thead><tr><th>Name</th><th>Title</th><th>Company</th><th>Email</th><th>LinkedIn</th></tr></thead>
+        <tbody id="people"></tbody>
+      </table>
+    </div>
+
+    <div class="panel" id="sources-panel" hidden>
+      <h2>Sources</h2>
+      <ul class="sources" id="sources"></ul>
+    </div>
+
+    <div class="panel" id="page-panel" hidden>
+      <h2>Extracted page</h2>
+      <div id="page-meta" class="meta" style="margin: 0 0 10px"></div>
+      <pre id="page-content" class="page-preview"></pre>
+    </div>
+
+    <div class="panel">
+      <h2>Execution trace</h2>
+      <table>
+        <thead><tr><th>Action</th><th>Provider</th><th>Status</th><th>Latency</th></tr></thead>
+        <tbody id="trace"></tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <details>
+        <summary>Raw normalized response</summary>
+        <pre id="raw"></pre>
+      </details>
+    </div>
+  </section>
+
+  <footer>Bounded tool calling: at most one web search, one companies lookup, one people lookup and one read per request.</footer>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const EXAMPLES = [
+  "Research Acme, find its official pricing page, and extract the page content.",
+  "Find 5 fintech companies in the United States with 51-200 employees.",
+  "Find engineering leaders at vercel.com and summarize their titles.",
+  "Find the latest posts on the Anthropic engineering blog.",
+  "Read https://example.com and summarize the page.",
+];
+
+let running = false;
+
+function setStatus(text) { $("status").textContent = text; }
+function showError(message) {
+  const el = $("error-banner");
+  el.textContent = message;
+  el.hidden = false;
+}
+function clearError() { $("error-banner").hidden = true; $("error-banner").textContent = ""; }
+function isHttpUrl(value) { return typeof value === "string" && /^https?:\/\//i.test(value); }
+
+function makeLink(url, label) {
+  const a = document.createElement("a");
+  a.href = url;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  a.textContent = label || url;
+  return a;
+}
+
+function renderTrace(execution) {
+  const body = $("trace");
+  body.textContent = "";
+  if (!Array.isArray(execution) || execution.length === 0) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 4;
+    td.textContent = "No provider actions were executed.";
+    td.style.color = "var(--muted)";
+    tr.appendChild(td);
+    body.appendChild(tr);
+    return;
+  }
+  for (const step of execution) {
+    const tr = document.createElement("tr");
+    const cells = [step.action, step.provider, step.status + (step.error_code ? " · " + step.error_code : ""), step.duration_ms + " ms"];
+    cells.forEach((value, index) => {
+      const td = document.createElement("td");
+      td.textContent = String(value ?? "—");
+      if (index === 2) td.className = step.status === "success" ? "ok" : "bad";
+      tr.appendChild(td);
+    });
+    body.appendChild(tr);
+  }
+}
+
+function renderSources(results, page) {
+  const list = $("sources");
+  list.textContent = "";
+  const seen = new Set();
+  const items = [];
+
+  if (page && isHttpUrl(page.url)) {
+    items.push({ title: page.title || page.final_url || page.url, url: page.url, note: page.final_url && page.final_url !== page.url ? page.final_url : null });
+    seen.add(page.url);
+  }
+  for (const item of Array.isArray(results) ? results : []) {
+    if (!isHttpUrl(item.url) || seen.has(item.url)) continue;
+    seen.add(item.url);
+    items.push({ title: item.title, url: item.url, note: null });
+  }
+
+  if (items.length === 0) { $("sources-panel").hidden = true; return; }
+  $("sources-panel").hidden = false;
+
+  for (const item of items) {
+    const li = document.createElement("li");
+    li.appendChild(makeLink(item.url, item.title || item.url));
+    const url = document.createElement("span");
+    url.className = "url";
+    url.textContent = item.note || item.url;
+    li.appendChild(url);
+    list.appendChild(li);
+  }
+}
+
+function renderPage(page) {
+  if (!page) { $("page-panel").hidden = true; return; }
+  $("page-panel").hidden = false;
+  const meta = $("page-meta");
+  meta.textContent = "";
+  meta.appendChild(makeLink(page.url, page.title || page.url));
+  const stats = document.createElement("span");
+  stats.textContent = "  ·  " + page.content_length + " characters" + (page.truncated ? " (truncated)" : "");
+  meta.appendChild(stats);
+  const preview = page.content.slice(0, 4000);
+  $("page-content").textContent = preview + (page.content.length > preview.length ? "\n\n… preview truncated" : "");
+}
+
+function renderCompanies(companies) {
+  const panel = $("companies-panel");
+  const body = $("companies");
+  body.textContent = "";
+  if (!Array.isArray(companies) || companies.length === 0) { panel.hidden = true; return; }
+  panel.hidden = false;
+
+  for (const company of companies) {
+    const tr = document.createElement("tr");
+    const nameCell = document.createElement("td");
+    const label = company.name || company.domain || "—";
+    if (company.domain) nameCell.appendChild(makeLink("https://" + company.domain, label));
+    else nameCell.textContent = label;
+    tr.appendChild(nameCell);
+
+    const employees = company.employee_range
+      ? company.employee_range + (company.employee_count ? " (" + company.employee_count + ")" : "")
+      : company.employee_count || "—";
+    const values = [
+      company.industry || "—",
+      employees,
+      company.revenue_range || "—",
+      [company.city, company.country].filter(Boolean).join(", ") || "—",
+    ];
+    for (const value of values) {
+      const td = document.createElement("td");
+      td.textContent = value;
+      tr.appendChild(td);
+    }
+
+    const linkCell = document.createElement("td");
+    if (company.linkedin_url) linkCell.appendChild(makeLink(company.linkedin_url, "LinkedIn"));
+    else linkCell.textContent = "—";
+    tr.appendChild(linkCell);
+    body.appendChild(tr);
+  }
+}
+
+function renderPeople(people) {
+  const panel = $("people-panel");
+  const body = $("people");
+  body.textContent = "";
+  if (!Array.isArray(people) || people.length === 0) { panel.hidden = true; return; }
+  panel.hidden = false;
+
+  for (const person of people) {
+    const tr = document.createElement("tr");
+    const nameCell = document.createElement("td");
+    nameCell.textContent = person.name || "—";
+    tr.appendChild(nameCell);
+
+    const titleCell = document.createElement("td");
+    titleCell.textContent = person.title || "—";
+    tr.appendChild(titleCell);
+
+    const companyCell = document.createElement("td");
+    companyCell.textContent = [person.company_name, person.company_domain].filter(Boolean).join(" · ") || "—";
+    tr.appendChild(companyCell);
+
+    const emailCell = document.createElement("td");
+    emailCell.textContent = person.business_email || (person.business_email_status ? `(${person.business_email_status})` : "—");
+    emailCell.title = [
+      person.business_email_status ? "status " + person.business_email_status : null,
+      person.business_email_score !== null && person.business_email_score !== undefined ? "score " + person.business_email_score : null,
+      person.business_email_risk_score ? "risk " + person.business_email_risk_score : null,
+      person.business_email_validated_at ? "validated " + person.business_email_validated_at : null,
+    ].filter(Boolean).join(" · ");
+    tr.appendChild(emailCell);
+
+    const linkCell = document.createElement("td");
+    if (person.linkedin_url) linkCell.appendChild(makeLink(person.linkedin_url, "LinkedIn"));
+    else linkCell.textContent = "—";
+    tr.appendChild(linkCell);
+    body.appendChild(tr);
+  }
+}
+
+function renderCandidates(body) {
+  const box = $("candidates");
+  box.textContent = "";
+  if (body.status !== "needs_input" || !Array.isArray(body.data?.results)) return;
+
+  for (const option of body.data.results.slice(0, 5)) {
+    if (!isHttpUrl(option.url)) continue;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "candidate";
+    button.textContent = option.title || option.url;
+    const span = document.createElement("span");
+    span.textContent = option.url;
+    button.appendChild(span);
+    button.addEventListener("click", () => {
+      $("input").value = "Read " + option.url + " and summarize it.";
+      $("input").focus();
+    });
+    box.appendChild(button);
+  }
+}
+
+function render(body) {
+  $("result").hidden = false;
+  $("answer").textContent = body.answer || (body.status === "needs_input" ? "Which page did you mean?" : "No answer returned.");
+  $("result-meta").textContent =
+    String(body.request_id || "") +
+    (body.meta ? "  ·  " + body.meta.duration_ms + " ms  ·  " + body.meta.tools_used + " tool execution(s)" : "");
+  renderCandidates(body);
+  renderCompanies(body.data?.companies);
+  renderPeople(body.data?.people);
+  renderSources(body.data?.results, body.data?.page || null);
+  renderPage(body.data?.page || null);
+  renderTrace(body.execution);
+  $("raw").textContent = JSON.stringify(body, null, 2);
+}
+
+async function run() {
+  if (running) return;
+  const input = $("input").value.trim();
+  if (!input) { showError("Enter a research request."); return; }
+
+  running = true;
+  clearError();
+  $("result").hidden = true;
+  $("run").disabled = true;
+  $("run").textContent = "Running…";
+  setStatus("Executing bounded research loop…");
+
+  try {
+    const res = await fetch("/api/v1/route", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input }),
+    });
+    let body;
+    try { body = await res.json(); } catch { throw new Error("Server returned a non-JSON response (HTTP " + res.status + ")."); }
+
+    setStatus("");
+    if (body && body.status === "error" && body.error) {
+      render(body);
+      showError(body.error.code + ": " + body.error.message + (body.error.retryable ? " (retryable)" : ""));
+      return;
+    }
+    render(body);
+  } catch (err) {
+    setStatus("");
+    showError(err instanceof Error ? err.message : "Request failed.");
+  } finally {
+    running = false;
+    $("run").disabled = false;
+    $("run").textContent = "Run";
+  }
+}
+
+function init() {
+  for (const example of EXAMPLES) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = example;
+    button.addEventListener("click", () => { $("input").value = example; $("input").focus(); });
+    $("examples").appendChild(button);
+  }
+
+  $("form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    run();
+  });
+  $("input").addEventListener("keydown", (event) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") run();
+  });
+
+  fetch("/api/health")
+    .then((res) => res.json())
+    .then((health) => {
+      const config = health.config || {};
+      const missing = [];
+      if (!config.tavily) missing.push("TAVILY_API_KEY");
+      if (!config.moltsets) missing.push("MOLTSETS_API_KEY");
+      if (!config.llm) missing.push("LLM_API_KEY / LLM_MODEL");
+      if (missing.length === 0) return;
+      const el = $("config-warning");
+      el.textContent = "Missing configuration: " + missing.join(", ") + ". Natural-language routing needs the LLM settings; direct actions still work via the API.";
+      el.hidden = false;
+    })
+    .catch(() => {
+      const el = $("config-warning");
+      el.textContent = "Could not read /api/health. The server may be starting up.";
+      el.hidden = false;
+    });
+}
+
+init();
+</script>
+</body>
+</html>

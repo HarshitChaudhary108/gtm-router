@@ -1,0 +1,30 @@
+{
+  "name": "gtm-router",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Bounded GTM research router: natural language -> typed actions -> Tavily search + Jina Reader",
+  "engines": {
+    "node": ">=22.6"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.build.json && cp -r src/public dist/public",
+    "start": "node dist/server.js",
+    "mcp": "tsx src/mcp-server.ts",
+    "start:mcp": "node dist/mcp-server.js",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "smoke": "tsx scripts/smoke.ts",
+    "cli": "tsx scripts/cli.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7"
+  }
+}
