@@ -1,0 +1,38 @@
+# gtm-router live demo — 2026-11-10 18:02
+# outmate@0.1.0 installed from the public npm registry with an empty npm cache, on this Mac's real agents.
+
+
+$ curl -s https://goldsmith-panther-exporter.ngrok-free.dev/llms.txt | head -5
+# gtm-router
+
+GTM research router. One MCP tool, `gtm_search`: company, people, business email and web research.
+Provider keys stay on the server. You only need a gtm-router token from the human.
+
+
+$ npx -y outmate --version
+0.1.0
+
+$ gtm login --url https://goldsmith-panther-exporter.ngrok-free.dev --token <token>
+Signed in to https://goldsmith-panther-exporter.ngrok-free.dev as "demo-180102".
+Next: gtm connect
+
+$ gtm
+Server:    https://goldsmith-panther-exporter.ngrok-free.dev
+Signed in: demo-180102
+Providers: none
+Not configured: tavily, jina, moltsets, parallel, you, linkup, firecrawl, serper, apify, browserbase, apollo, hunter, llm
+Try: gtm search "Find engineering leaders at vercel.com"
+
+$ gtm connect
+Claude Code: added (user scope), skill installed
+Cursor: added to /Users/apple/.cursor/mcp.json
+Codex: added to /Users/apple/.codex/config.toml, skill installed
+VS Code: added to /Users/apple/Library/Application Support/Code/User/mcp.json
+Gemini CLI: added to /Users/apple/.gemini/settings.json
+Restart each agent (or start a new session) to load gtm-router.
+
+$ gtm search "Find engineering leaders at vercel.com"
+GTM Router error: E_CONFIG — Natural-language routing is unavailable: set LLM_API_KEY, LLM_BASE_URL and LLM_MODEL. Direct action endpoints still work.
+
+$ claude mcp list | grep gtm
+gtm-router: https://goldsmith-panther-exporter.ngrok-free.dev/mcp (HTTP) - ✔ Connected

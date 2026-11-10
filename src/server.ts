@@ -12,6 +12,7 @@ const llm =
         apiKey: config.llmKey,
         baseUrl: config.llmBaseUrl,
         model: config.llmModel,
+        reasoningEffort: config.llmReasoningEffort,
         timeoutMs: config.llmTimeoutMs,
       })
     : undefined;

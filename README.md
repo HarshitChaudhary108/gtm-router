@@ -32,6 +32,8 @@ router is also exposed over MCP and was verified end-to-end locally and through 
 
 ---
 
+One-line agent setup (`llms.txt`, installer, `gtm` CLI, per-user tokens): see [docs/SETUP.md](docs/SETUP.md).
+
 ## Scope
 
 In scope for this MVP:

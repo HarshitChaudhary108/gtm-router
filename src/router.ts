@@ -153,6 +153,15 @@ const TOOL_TO_ACTION: Record<string, ActionName> = {
   hunter_email: "gtm.hunter_email",
 };
 
+/** Database tools whose provider has no key are hidden, so the model doesn't spend a turn on them. */
+function availableTools(config: Config): typeof TOOL_DEFINITIONS {
+  const hidden = new Set<string>();
+  if (!config.moltsetsKey) hidden.add("search_companies").add("search_people");
+  if (!config.apolloKey) hidden.add("apollo_companies").add("apollo_people");
+  if (!config.hunterKey) hidden.add("hunter_domain").add("hunter_email");
+  return TOOL_DEFINITIONS.filter((tool) => !hidden.has(tool.function.name));
+}
+
 const GTM_TOOLS: ActionName[] = [
   "gtm.search_companies",
   "gtm.search_people",
@@ -278,8 +287,14 @@ export async function route(input: unknown, deps: RouterDeps): Promise<Normalize
     }
   }
 
+  const tools = availableTools(deps.config);
+  const missing = TOOL_DEFINITIONS.filter((tool) => !tools.includes(tool)).map((tool) => tool.function.name);
+  const systemPrompt = missing.length
+    ? `${SYSTEM_PROMPT}\n\nNot available in this deployment: ${missing.join(", ")}. Use web_search (for example LinkedIn or company team pages) to find people and companies instead.`
+    : SYSTEM_PROMPT;
+
   const messages: LlmMessage[] = [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: systemPrompt },
     { role: "user", content: userInput },
   ];
 
@@ -306,7 +321,7 @@ export async function route(input: unknown, deps: RouterDeps): Promise<Normalize
 
     let response: LlmResponse;
     try {
-      response = await deps.llm.complete(messages, TOOL_DEFINITIONS);
+      response = await deps.llm.complete(messages, tools);
     } catch (err) {
       throw withTrace(err);
     }
@@ -323,6 +338,7 @@ export async function route(input: unknown, deps: RouterDeps): Promise<Normalize
         id: call.id,
         type: "function",
         function: { name: call.name, arguments: call.arguments },
+        ...(call.extraContent ? { extra_content: call.extraContent } : {}),
       })),
     });
 

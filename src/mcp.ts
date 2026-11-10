@@ -1,13 +1,15 @@
-import { timingSafeEqual } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
 import { buildEngineDeps, type AppContext } from "./api.js";
-import { llmConfigured, secretsOf } from "./config.js";
+import { authenticate, authRequired, type AuthOptions, type TokenStore } from "./auth.js";
+import { providerStatus, secretsOf } from "./config.js";
 import { executeAction, type EngineDeps } from "./engine.js";
 import { AppError, redactSecrets, toAppError } from "./errors.js";
 import { route } from "./router.js";
+import { createSignup } from "./signup.js";
+import { serveSetup } from "./setup.js";
 import type { NormalizedResponse } from "./types.js";
 import { newRequestId } from "./util.js";
 
@@ -134,14 +136,6 @@ export function createMcpServer(ctx: AppContext, engineDeps: EngineDeps, secrets
   return server;
 }
 
-function authorized(req: IncomingMessage, token: string): boolean {
-  const header = req.headers.authorization;
-  if (typeof header !== "string" || !header.startsWith("Bearer ")) return false;
-  const provided = Buffer.from(header.slice(7));
-  const expected = Buffer.from(token);
-  return provided.length === expected.length && timingSafeEqual(provided, expected);
-}
-
 function sendJson(res: ServerResponse, status: number, body: unknown): void {
   if (res.headersSent) {
     res.end();
@@ -153,6 +147,8 @@ function sendJson(res: ServerResponse, status: number, body: unknown): void {
 
 export interface McpHandlerOptions {
   allowedHosts?: string[];
+  /** Per-user bearer tokens. When this store's file exists, a valid token is required. */
+  tokens?: TokenStore;
 }
 
 /** HTTP handler for the MCP endpoint and a small health probe. */
@@ -162,6 +158,8 @@ export function createMcpHandler(
 ): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
   const secrets = secretsOf(ctx.config);
   const engineDeps = buildEngineDeps(ctx);
+  const signup = createSignup({ config: ctx.config, tokens: options.tokens });
+  const authOptions: AuthOptions = { legacyToken: ctx.config.mcpAuthToken, store: options.tokens };
   const allowedHosts = options.allowedHosts ?? [
     `localhost:${ctx.config.mcpPort}`,
     `127.0.0.1:${ctx.config.mcpPort}`,
@@ -181,25 +179,14 @@ export function createMcpHandler(
           status: "ok",
           service: "gtm-router-mcp",
           endpoint: "/mcp",
-          config: {
-            tavily: Boolean(ctx.config.tavilyKey),
-            jina: Boolean(ctx.config.jinaKey),
-            moltsets: Boolean(ctx.config.moltsetsKey),
-            parallel: Boolean(ctx.config.parallelKey),
-            you: Boolean(ctx.config.youKey),
-            linkup: Boolean(ctx.config.linkupKey),
-            firecrawl: Boolean(ctx.config.firecrawlKey),
-            serper: Boolean(ctx.config.serperKey),
-            apify: Boolean(ctx.config.apifyKey),
-            browserbase: Boolean(ctx.config.browserbaseKey),
-            apollo: Boolean(ctx.config.apolloKey),
-            hunter: Boolean(ctx.config.hunterKey),
-            llm: llmConfigured(ctx.config),
-          },
-          auth: Boolean(ctx.config.mcpAuthToken),
+          config: providerStatus(ctx.config),
+          auth: authRequired(authOptions),
         });
         return;
       }
+
+      if (await signup(req, res, path)) return;
+      if (await serveSetup(req, res, path, { config: ctx.config, tokens: options.tokens })) return;
 
       if (path !== "/mcp") throw new AppError("E_NOT_FOUND", "Not found");
 
@@ -209,7 +196,7 @@ export function createMcpHandler(
         return;
       }
 
-      if (ctx.config.mcpAuthToken && !authorized(req, ctx.config.mcpAuthToken)) {
+      if (!authenticate(req, authOptions)) {
         sendJson(res, 401, { status: "error", error: "Unauthorized" });
         return;
       }

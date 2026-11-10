@@ -16,7 +16,8 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "smoke": "tsx scripts/smoke.ts",
-    "cli": "tsx scripts/cli.ts"
+    "cli": "tsx scripts/cli.ts",
+    "token": "tsx scripts/tokens.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

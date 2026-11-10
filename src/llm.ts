@@ -7,12 +7,15 @@ export interface LlmToolCall {
   id: string;
   name: string;
   arguments: string;
+  /** Provider-specific data that must be sent back unchanged (Gemini 3 thought signatures). */
+  extraContent?: Record<string, unknown>;
 }
 
 export interface LlmToolCallPayload {
   id: string;
   type: "function";
   function: { name: string; arguments: string };
+  extra_content?: Record<string, unknown>;
 }
 
 export interface LlmMessage {
@@ -36,6 +39,8 @@ export interface LlmClientDeps {
   apiKey: string;
   baseUrl: string;
   model: string;
+  /** Sent as reasoning_effort when set. Leave unset for providers that reject it. */
+  reasoningEffort?: string;
   fetchImpl?: FetchLike;
   timeoutMs?: number;
   retryDelayMs?: number;
@@ -53,6 +58,7 @@ export function createLlmClient(deps: LlmClientDeps): LlmClient {
         temperature: 0,
         max_tokens: 2000,
       };
+      if (deps.reasoningEffort) body.reasoning_effort = deps.reasoningEffort;
       if (tools && tools.length > 0) {
         body.tools = tools;
         body.tool_choice = "auto";
@@ -96,6 +102,7 @@ export function createLlmClient(deps: LlmClientDeps): LlmClient {
             id: typeof raw.id === "string" ? raw.id : `call_${toolCalls.length}`,
             name: raw.function.name,
             arguments: typeof raw.function.arguments === "string" ? raw.function.arguments : "",
+            ...(isRecord(raw.extra_content) ? { extraContent: raw.extra_content } : {}),
           });
         }
       }

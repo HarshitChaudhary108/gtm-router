@@ -157,6 +157,17 @@ test("search-only request stops after one search", async () => {
   const system = llm.calls[0]?.messages[0];
   assert.ok(system?.content?.includes("untrusted"));
   const toolNames = (llm.calls[0]?.tools as Array<{ function: { name: string } }>).map((t) => t.function.name);
+  // No database keys in this config: only the web tools and ask_user are offered.
+  assert.deepEqual(toolNames, ["web_search", "read_url", "ask_user"]);
+  assert.ok(system?.content?.includes("Not available in this deployment: search_companies"));
+});
+
+test("database tools are offered only when their provider key is set", async () => {
+  const llm = new FakeLlm([finalResponse("Nothing to look up.")]);
+  const keyed = parseConfig({ MOLTSETS_API_KEY: "k", APOLLO_API_KEY: "k", HUNTER_API_KEY: "k" });
+  await route("Find Acme's pricing page.", { ...makeDeps(llm), config: keyed });
+
+  const toolNames = (llm.calls[0]?.tools as Array<{ function: { name: string } }>).map((t) => t.function.name);
   assert.deepEqual(toolNames, [
     "web_search",
     "read_url",
@@ -168,6 +179,7 @@ test("search-only request stops after one search", async () => {
     "hunter_email",
     "ask_user",
   ]);
+  assert.equal(llm.calls[0]?.messages[0]?.content?.includes("Not available"), false);
 });
 
 test("search followed by reading a returned URL uses both actions", async () => {
