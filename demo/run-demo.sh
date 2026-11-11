@@ -1,33 +1,33 @@
 #!/bin/sh
-# Cold-start demo of the gtm-router one-line setup, as an agent would run it.
+# Cold-start demo of the outmate one-line setup, as an agent would run it.
 #   PKG   what npx installs: "outmate" (from npm) or a path to a packed .tgz
-#   HOST  the public gtm-router URL
-#   GTM_HOME is a fresh folder, so this starts with nothing saved. The token is never printed.
+#   HOST  the public outmate URL
+#   OUTMATE_HOME is a fresh folder, so this starts with nothing saved. The token is never printed.
 set -eu
 cd "$(dirname "$0")/.."
 PKG="${PKG:-outmate}"
 HOST="${HOST:-https://goldsmith-panther-exporter.ngrok-free.dev}"
-export GTM_HOME="$(mktemp -d)/gtm"
+export OUTMATE_HOME="$(mktemp -d)/outmate"
 export npm_config_yes=true
 step() { printf '\n\033[1m$ %s\033[0m\n' "$*"; }
-gtm() { npx -y --package "$PKG" gtm "$@"; }
+outmate() { npx -y --package "$PKG" outmate "$@"; }
 
-TOKEN=$(npm run -s token -- create "demo-$(date +%H%M%S)" | grep '^gtm_')
+TOKEN=$(npm run -s token -- create "demo-$(date +%H%M%S)" | grep '^outmate_')
 
 step "curl -s $HOST/llms.txt | head -5"
 curl -s "$HOST/llms.txt" | head -5
 
 step "npx -y outmate --version"
-gtm --version
+outmate --version
 
-step "gtm login --url $HOST --token <token>"
-gtm login --url "$HOST" --token "$TOKEN"
+step "outmate login --url $HOST --token <token>"
+outmate login --url "$HOST" --token "$TOKEN"
 
-step "gtm"
-gtm
+step "outmate"
+outmate
 
-step "gtm connect"
-gtm connect
+step "outmate connect"
+outmate connect
 
-step 'gtm search "Find engineering leaders at vercel.com"'
-gtm search "Find engineering leaders at vercel.com" || true
+step 'outmate search "Find engineering leaders at vercel.com"'
+outmate search "Find engineering leaders at vercel.com" || true

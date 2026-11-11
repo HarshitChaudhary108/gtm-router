@@ -1,4 +1,4 @@
-# Founder demo: gtm-router in Claude Code
+# Founder demo: outmate in Claude Code
 
 What the video shows: a user starts with nothing, types one line into Claude Code, signs in with a
 token, and a few seconds later asks a research question and gets real people back.
@@ -28,10 +28,10 @@ Today a search fails. Every provider key in `.env` is empty, not only the LLM on
 ## 1. Reset to a clean machine (so "from start" is real)
 
 ```bash
-claude mcp remove gtm-router -s user
+claude mcp remove outmate -s user
 ```
 ```bash
-rm -rf ~/.gtm "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/gtm-router"
+rm -rf ~/.outmate "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/outmate"
 ```
 ```bash
 npm rm -g outmate
@@ -54,13 +54,13 @@ Screen setup: a clean terminal, a large font (18pt+), a dark theme, notification
 
 ### Scene 1: the problem (10s, voiceover)
 > "Normally, getting your agent to research companies and people means a pile of API keys, an MCP
-> config file, and docs. Here's what it looks like with gtm-router."
+> config file, and docs. Here's what it looks like with outmate."
 
 ### Scene 2: one line (30s)
 Run `claude`, then type:
 
 ```
-set up gtm-router — https://<your-host>/llms.txt
+set up outmate — https://<your-host>/llms.txt
 ```
 
 Claude reads the page and asks for a token, pointing to `https://<host>/signup`. Open that link in
@@ -70,13 +70,13 @@ Paste it back into Claude.
 > keys stay on our server."
 
 ### Scene 3: Claude does the setup (45s)
-Claude runs these in order. Approve the `npm` / `gtm` permission prompts when they appear:
+Claude runs these in order. Approve the `npm` / `outmate` permission prompts when they appear:
 
 ```
 npm i -g outmate
-gtm login --url https://<host> --token ****
-gtm connect      → "Claude Code: added (user scope), skill installed"
-gtm              → shows signed in + configured providers
+outmate login --url https://<host> --token ****
+outmate connect      → "Claude Code: added (user scope), skill installed"
+outmate              → shows signed in + configured providers
 ```
 
 It finishes with a one-line summary and three suggested questions (the `llms.txt` asks it to).
@@ -90,11 +90,11 @@ In the same session (the MCP tool loads next session, but the CLI works now):
 search for engineering leaders at vercel.com
 ```
 
-Claude runs `gtm search "..."` and lists names, titles and source links.
+Claude runs `outmate search "..."` and lists names, titles and source links.
 
 ### Scene 5: the native tool (45s)
-Type `/exit`, then run `claude` again. Optionally run `/mcp` and show `gtm-router ✔ connected`.
-Then ask 2–3 short questions. Claude now calls the `gtm_search` tool directly:
+Type `/exit`, then run `claude` again. Optionally run `/mcp` and show `outmate ✔ connected`.
+Then ask 2–3 short questions. Claude now calls the `outmate_search` tool directly:
 
 ```
 How many employees does Linear have, and where are they based?
@@ -120,10 +120,10 @@ What does https://vercel.com/pricing say about the Pro plan?
   runs. Run the Vercel question twice before recording; if one take returns weak names, retake.
 
 - Approve permission prompts for each command (don't choose "always allow" before recording) so
-  viewers see what's being run, or pre-allow `Bash(npm:*)` and `Bash(gtm:*)` for a smoother take.
+  viewers see what's being run, or pre-allow `Bash(npm:*)` and `Bash(outmate:*)` for a smoother take.
 - The token is masked in Claude's output, but blur the paste moment in editing to be safe.
 - Each search spends provider credits. Run the dry run once, not ten times.
 - Backup take: `sh demo/run-demo.sh` runs the same flow as a script, and
-  `sh demo/claude-session.sh` proves a fresh Claude Code session calls `gtm_search`.
+  `sh demo/claude-session.sh` proves a fresh Claude Code session calls `outmate_search`.
 - After recording: `npm run token -- revoke <name>` (for example `gautam_at_outmate.ai`), and set
   `SIGNUP_ENABLED=` back to empty if you don't want sign-up open.
