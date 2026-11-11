@@ -1,0 +1,156 @@
+{
+  "name": "outmate.search_companies",
+  "tool": "search_companies",
+  "order": 30,
+  "kind": "builtin",
+  "key": "moltsets",
+  "needs_key": true,
+  "capability": "company search (MoltSets)",
+  "description": "Search MoltSets' B2B company database by name, exact domain, industry, employee range, revenue range, NAICS code, LinkedIn industry or location. Returns domain, size, revenue range, location and LinkedIn URL. Use for account research and ICP lists. At most one call per request.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "Company name free-text search. Use domain for a known company."
+      },
+      "domain": {
+        "type": "string",
+        "description": "Exact company domain, e.g. vercel.com. URLs are normalized."
+      },
+      "industry": {
+        "type": "string",
+        "enum": [
+          "Professional and Business Services",
+          "Information Technology",
+          "Manufacturing",
+          "Retail",
+          "Health and Pharmaceuticals",
+          "Creative Arts and Entertainment",
+          "Construction",
+          "Marketing & Advertising",
+          "Finance and Banking",
+          "Tourism and Hospitality",
+          "Non-Profit and Social Services",
+          "Food and Beverage",
+          "Real Estate",
+          "Education",
+          "Transportation and Logistics",
+          "Media and Publishing",
+          "Energy",
+          "Government and Public Administration",
+          "Automotive",
+          "Telecommunications",
+          "Agriculture",
+          "Utilities"
+        ],
+        "description": "Exact industry bucket."
+      },
+      "employee_range": {
+        "type": "string",
+        "enum": [
+          "1-10",
+          "11-20",
+          "21-50",
+          "51-200",
+          "201-500",
+          "501-1000",
+          "1001-5000",
+          "5001+"
+        ],
+        "description": "Employee count band."
+      },
+      "revenue_range": {
+        "type": "string",
+        "enum": [
+          "Below $500k",
+          "$500k - $1M",
+          "$1M - $5M",
+          "$5M - $10M",
+          "$10M - $20M",
+          "$20M - $50M",
+          "Above $50M"
+        ],
+        "description": "Revenue band."
+      },
+      "naics_code": {
+        "type": "string",
+        "description": "2-6 digit NAICS code."
+      },
+      "linkedin_industry": {
+        "type": "string",
+        "description": "Exact LinkedIn industry label."
+      },
+      "country": {
+        "type": "string",
+        "description": "Full English country name."
+      },
+      "state": {
+        "type": "string",
+        "description": "Full state/region name or abbreviation."
+      },
+      "exclude_domain": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 25,
+        "description": "Domains to suppress, e.g. existing customers or vendors."
+      },
+      "exclude_industry": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 25
+      },
+      "exclude_employee_range": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "1-10",
+            "11-20",
+            "21-50",
+            "51-200",
+            "201-500",
+            "501-1000",
+            "1001-5000",
+            "5001+"
+          ]
+        },
+        "maxItems": 25
+      },
+      "exclude_revenue_range": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "Below $500k",
+            "$500k - $1M",
+            "$1M - $5M",
+            "$5M - $10M",
+            "$10M - $20M",
+            "$20M - $50M",
+            "Above $50M"
+          ]
+        },
+        "maxItems": 25
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 10,
+        "description": "Results per page. Defaults to 10; maximum 10."
+      },
+      "offset": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 10000,
+        "description": "Results to skip for pagination."
+      }
+    },
+    "required": [],
+    "additionalProperties": false
+  }
+}

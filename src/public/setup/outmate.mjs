@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// gtm: command line client for a gtm-router server. Single file, no dependencies, Node 18+.
-// Published to npm as `outmate` (commands `gtm` and `outmate`) and also served by the server at /gtm.mjs.
+// outmate: command line client for a outmate server. Single file, no dependencies, Node 18+.
+// Published to npm as `outmate` (commands `outmate` and `outmate`) and also served by the server at /outmate.mjs.
 import { execFile } from "node:child_process";
 import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -8,20 +8,20 @@ import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 
 const VERSION = "0.1.1";
-// Replaced with the server's own URL when served from /gtm.mjs. Left as is in the npm package.
+// Replaced with the server's own URL when served from /outmate.mjs. Left as is in the npm package.
 const DEFAULT_URL = "{{HOST}}";
-const HOME = process.env.GTM_HOME || join(homedir(), ".gtm");
+const HOME = process.env.OUTMATE_HOME || join(homedir(), ".outmate");
 const CREDS = join(HOME, "credentials");
-const SERVER_NAME = "gtm-router";
+const SERVER_NAME = "outmate";
 const run = promisify(execFile);
 
-const USAGE = `gtm ${VERSION}: client for gtm-router
+const USAGE = `outmate ${VERSION}: client for outmate
 
-  gtm login --url <server> --token <token>   sign in and save the token
-  gtm connect [--agent <name>]               add the MCP server and skill to your agents
-  gtm [status]                               check token and providers
-  gtm search "<question>"                    ask gtm_search from the terminal
-  gtm logout                                 remove the saved token
+  outmate login --url <server> --token <token>   sign in and save the token
+  outmate connect [--agent <name>]               add the MCP server and skill to your agents
+  outmate [status]                               check token and providers
+  outmate search "<question>"                    ask outmate_search from the terminal
+  outmate logout                                 remove the saved token
 
 Agents: claude, cursor, codex, vscode, gemini, opencode, windsurf
 `;
@@ -77,7 +77,7 @@ function saveCreds(creds) {
 }
 
 function requireCreds() {
-  return loadCreds() ?? fail("Not signed in. Run: gtm login --url <server> --token <token>");
+  return loadCreds() ?? fail("Not signed in. Run: outmate login --url <server> --token <token>");
 }
 
 async function whoami(url, token) {
@@ -93,23 +93,23 @@ async function whoami(url, token) {
 }
 
 async function login(flags) {
-  const token = flags.token || process.env.GTM_TOKEN;
-  if (!token) fail("Missing token. Use: gtm login --url <server> --token <token>");
-  const base = flags.url || process.env.GTM_URL || (DEFAULT_URL.startsWith("{{") ? "" : DEFAULT_URL);
-  if (!base) fail("Missing server URL. Use: gtm login --url <server> --token <token>");
+  const token = flags.token || process.env.OUTMATE_TOKEN;
+  if (!token) fail("Missing token. Use: outmate login --url <server> --token <token>");
+  const base = flags.url || process.env.OUTMATE_URL || (DEFAULT_URL.startsWith("{{") ? "" : DEFAULT_URL);
+  if (!base) fail("Missing server URL. Use: outmate login --url <server> --token <token>");
   const url = cleanUrl(base);
   const { status, body } = await whoami(url, token);
   if (status === 401) fail("Token rejected. Ask the operator for a new one.");
   if (!body) fail(`Server answered HTTP ${status}.`);
   saveCreds({ url, token });
   console.log(`Signed in to ${url} as "${body.name}".`);
-  console.log("Next: gtm connect");
+  console.log("Next: outmate connect");
 }
 
 async function status() {
   const { url, token } = requireCreds();
   const { status: code, body } = await whoami(url, token);
-  if (code === 401) fail("Saved token was rejected (revoked?). Run: gtm login --url <server> --token <token>");
+  if (code === 401) fail("Saved token was rejected (revoked?). Run: outmate login --url <server> --token <token>");
   if (!body) fail(`Server answered HTTP ${code}.`);
   console.log(`Server:    ${url}`);
   console.log(`Signed in: ${body.name}`);
@@ -117,7 +117,7 @@ async function status() {
   const off = Object.entries(body.providers).filter(([, v]) => !v).map(([k]) => k);
   console.log(`Providers: ${on.join(", ") || "none"}`);
   if (off.length) console.log(`Not configured: ${off.join(", ")}`);
-  console.log('Try: gtm search "Find engineering leaders at vercel.com"');
+  console.log('Try: outmate search "Find engineering leaders at vercel.com"');
 }
 
 // ---------- connect: one entry per agent ----------
@@ -138,7 +138,7 @@ function readJson(file) {
     const parsed = JSON.parse(readFileSync(file, "utf8"));
     return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
   } catch {
-    throw new Error(`${file} is not plain JSON (comments?). Fix it, then run gtm connect --agent again.`);
+    throw new Error(`${file} is not plain JSON (comments?). Fix it, then run outmate connect --agent again.`);
   }
 }
 
@@ -157,7 +157,7 @@ function vscodeUserDir(home) {
 
 const tomlString = (value) => JSON.stringify(value); // a JSON string is a valid TOML basic string
 
-/** Replaces the [mcp_servers.gtm-router] table (and its subtables) in a Codex config.toml. */
+/** Replaces the [mcp_servers.outmate] table (and its subtables) in a Codex config.toml. */
 function upsertCodexToml(text, url, auth) {
   const header = `[mcp_servers.${SERVER_NAME}]`;
   const out = [];
@@ -271,7 +271,7 @@ async function fetchSkill(url) {
     return [
       "---",
       `name: ${SERVER_NAME}`,
-      "description: GTM research through the gtm_search MCP tool - companies, people, job titles, business emails, headcount and reading a web page. Use it whenever a task needs live company or people data.",
+      "description: GTM research through the outmate_search MCP tool - companies, people, job titles, business emails, headcount and reading a web page. Use it whenever a task needs live company or people data.",
       "---",
       "",
       body,
@@ -313,12 +313,13 @@ async function connect(flags) {
       console.log(`${agent.label}: not configured. ${err instanceof Error ? err.message : err}`);
     }
   }
-  console.log("Restart each agent (or start a new session) to load gtm-router.");
+  console.log("Restart each agent (or start a new session) to load outmate.");
+  console.log(`To use your own provider keys, open ${url}/connections`);
   if (failed === chosen.length) process.exit(1);
 }
 
 async function search(query) {
-  if (!query) fail('Usage: gtm search "<question>"');
+  if (!query) fail('Usage: outmate search "<question>"');
   const { url, token } = requireCreds();
   let res;
   try {
@@ -331,14 +332,14 @@ async function search(query) {
       },
       body: JSON.stringify({
         jsonrpc: "2.0", id: 1, method: "tools/call",
-        params: { name: "gtm_search", arguments: { query } },
+        params: { name: "outmate_search", arguments: { query } },
       }),
       signal: AbortSignal.timeout(120_000),
     });
   } catch {
     return fail(`Cannot reach ${url}.`);
   }
-  if (res.status === 401) fail("Token rejected. Run: gtm login --url <server> --token <token>");
+  if (res.status === 401) fail("Token rejected. Run: outmate login --url <server> --token <token>");
   const raw = await res.text();
   const json = raw.includes("data:") ? raw.split("\n").filter((l) => l.startsWith("data:")).pop().slice(5) : raw;
   let message;
@@ -363,10 +364,10 @@ try {
   else if (command === "search") await search(rest.slice(1).join(" ").trim());
   else if (command === "logout") {
     rmSync(CREDS, { force: true });
-    console.log("Signed out. Agent configs keep the old token until it is revoked or you run gtm connect again.");
+    console.log("Signed out. Agent configs keep the old token until it is revoked or you run outmate connect again.");
   } else if (command === "help") console.log(USAGE);
   else if (command === "version") console.log(VERSION);
   else fail(`Unknown command: ${command}\n\n${USAGE}`);
 } catch (err) {
-  fail(`gtm failed: ${err instanceof Error ? err.message : "unknown error"}`);
+  fail(`outmate failed: ${err instanceof Error ? err.message : "unknown error"}`);
 }

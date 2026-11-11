@@ -10,7 +10,7 @@ const post = (base: string, fields: Record<string, string>) =>
     body: new URLSearchParams(fields).toString(),
   });
 
-const tokenIn = (html: string): string | undefined => html.match(/gtm_[A-Za-z0-9_-]{43}/)?.[0];
+const tokenIn = (html: string): string | undefined => html.match(/outmate_[A-Za-z0-9_-]{43}/)?.[0];
 
 test("nameForEmail maps emails to store-safe names and rejects junk", () => {
   assert.equal(nameForEmail("Jo.Smith@Acme.com"), "jo.smith_at_acme.com");
@@ -43,7 +43,7 @@ test("signup issues a working token once per email", async () => {
     const html = await res.text();
     const token = tokenIn(html);
     assert.ok(token, "token must be on the page");
-    assert.ok(html.includes(`set up gtm-router — ${srv.base}/llms.txt`));
+    assert.ok(html.includes(`set up outmate — ${srv.base}/llms.txt`));
 
     const who = await fetch(`${srv.base}/whoami`, { headers: { Authorization: `Bearer ${token}` } });
     assert.equal(who.status, 200);

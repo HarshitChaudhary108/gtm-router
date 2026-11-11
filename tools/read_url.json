@@ -1,0 +1,32 @@
+{
+  "name": "web.read_url",
+  "tool": "read_url",
+  "order": 20,
+  "kind": "builtin",
+  "key": "jina",
+  "needs_key": false,
+  "capability": "reading a web page",
+  "description": "Extract readable content from a known public HTTP(S) URL. Returns the page title, description, main content and final URL. Choose a provider with the provider field; jina is the default.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "url": {
+        "type": "string",
+        "description": "Absolute public http:// or https:// URL to read."
+      },
+      "provider": {
+        "type": "string",
+        "enum": [
+          "jina",
+          "firecrawl",
+          "browserbase"
+        ],
+        "description": "Read provider. Defaults to jina."
+      }
+    },
+    "required": [
+      "url"
+    ],
+    "additionalProperties": false
+  }
+}

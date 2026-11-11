@@ -1,3 +1,4 @@
+import type { ToolCatalog } from "./tools.js";
 import { readFile } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { llmConfigured, secretsOf, type Config } from "./config.js";
@@ -172,6 +173,27 @@ export function buildEngineDeps(ctx: AppContext): EngineDeps {
   };
 }
 
+/** Engine deps for one user: their keys (own, else shared) replace the server-wide ones. */
+export function buildEngineDepsForKeys(ctx: AppContext, keys: Record<string, string>, tools?: ToolCatalog): EngineDeps {
+  return {
+    ...buildEngineDeps(ctx),
+    tavilyKey: keys.tavily,
+    jinaKey: keys.jina,
+    moltsetsKey: keys.moltsets,
+    parallelKey: keys.parallel,
+    youKey: keys.you,
+    linkupKey: keys.linkup,
+    firecrawlKey: keys.firecrawl,
+    serperKey: keys.serper,
+    apifyKey: keys.apify,
+    browserbaseKey: keys.browserbase,
+    apolloKey: keys.apollo,
+    hunterKey: keys.hunter,
+    extraKeys: keys,
+    tools,
+  };
+}
+
 /** Build the HTTP request handler. External calls are injected so tests can mock them. */
 export function createHandler(ctx: AppContext): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
   const secrets = secretsOf(ctx.config);
@@ -205,7 +227,7 @@ export function createHandler(ctx: AppContext): (req: IncomingMessage, res: Serv
           200,
           {
             status: "ok",
-            service: "gtm-router",
+            service: "outmate",
             version: "0.1.0",
             uptime_s: Math.round(process.uptime()),
             config: {
@@ -260,7 +282,7 @@ export function createHandler(ctx: AppContext): (req: IncomingMessage, res: Serv
         requirePost(req, "POST");
         const body = await readBody(req);
         const isCompanies = path.endsWith("search-companies");
-        const result = await executeAction(isCompanies ? "gtm.search_companies" : "gtm.search_people", body, engineDeps);
+        const result = await executeAction(isCompanies ? "outmate.search_companies" : "outmate.search_people", body, engineDeps);
         const envelope = isCompanies
           ? companiesEnvelope(requestId, result, Date.now() - started)
           : peopleEnvelope(requestId, result, Date.now() - started);

@@ -12,7 +12,7 @@ import { startServer } from "./harness.js";
 const reqWith = (headers: Record<string, string>): IncomingMessage => ({ headers }) as IncomingMessage;
 
 test("baseUrl: PUBLIC_URL wins and must be http(s)", () => {
-  assert.equal(baseUrl(reqWith({ host: "evil.test" }), { publicUrl: "https://gtm.example.com/some/path" }), "https://gtm.example.com");
+  assert.equal(baseUrl(reqWith({ host: "evil.test" }), { publicUrl: "https://outmate.example.com/some/path" }), "https://outmate.example.com");
   assert.equal(baseUrl(reqWith({ host: "evil.test" }), { publicUrl: "ftp://x.test" }), null);
   assert.equal(baseUrl(reqWith({ host: "evil.test" }), { publicUrl: "not a url" }), null);
 });
@@ -34,7 +34,7 @@ test("setup files are public, filled with the host, and well formed", async () =
   const srv = await startServer();
   try {
     srv.store.create("alice"); // auth is now on; setup files must stay readable
-    for (const path of ["/llms.txt", "/skill.md", "/install.sh", "/gtm.mjs"]) {
+    for (const path of ["/llms.txt", "/skill.md", "/install.sh", "/outmate.mjs"]) {
       const res = await fetch(`${srv.base}${path}`);
       const text = await res.text();
       assert.equal(res.status, 200, path);
@@ -44,15 +44,15 @@ test("setup files are public, filled with the host, and well formed", async () =
     const llms = await (await fetch(`${srv.base}/llms.txt`)).text();
     assert.ok(llms.includes(`${srv.base}/install.sh`));
     assert.ok(llms.includes(`npm i -g outmate`));
-    assert.ok(llms.includes(`gtm login --url ${srv.base} --token`));
+    assert.ok(llms.includes(`outmate login --url ${srv.base} --token`));
     assert.ok(llms.includes(`${srv.base}/skill.md`));
 
     const script = join(srv.dir, "install.sh");
     writeFileSync(script, await (await fetch(`${srv.base}/install.sh`)).text());
     execFileSync("sh", ["-n", script]); // syntax check
-    const gtm = join(srv.dir, "gtm.mjs");
-    writeFileSync(gtm, await (await fetch(`${srv.base}/gtm.mjs`)).text());
-    execFileSync(process.execPath, ["--check", gtm]);
+    const outmate = join(srv.dir, "outmate.mjs");
+    writeFileSync(outmate, await (await fetch(`${srv.base}/outmate.mjs`)).text());
+    execFileSync(process.execPath, ["--check", outmate]);
 
     const post = await fetch(`${srv.base}/llms.txt`, { method: "POST" });
     assert.equal(post.status, 405);
@@ -75,7 +75,7 @@ test("/whoami needs a valid token and never leaks provider keys", async () => {
   try {
     const { token } = srv.store.create("alice");
     assert.equal((await fetch(`${srv.base}/whoami`)).status, 401);
-    assert.equal((await fetch(`${srv.base}/whoami`, { headers: { Authorization: "Bearer gtm_bad" } })).status, 401);
+    assert.equal((await fetch(`${srv.base}/whoami`, { headers: { Authorization: "Bearer outmate_bad" } })).status, 401);
 
     const res = await fetch(`${srv.base}/whoami`, { headers: { Authorization: `Bearer ${token}` } });
     const text = await res.text();
@@ -101,7 +101,7 @@ test("/mcp accepts a store token, rejects a missing or revoked one", async () =>
     };
 
     const ok = await connect({ Authorization: `Bearer ${token}` });
-    assert.deepEqual((await ok.listTools()).tools.map((t) => t.name), ["gtm_search"]);
+    assert.deepEqual((await ok.listTools()).tools.map((t) => t.name), ["outmate_search"]);
     await ok.close();
 
     await assert.rejects(connect(), /401|Unauthorized/);

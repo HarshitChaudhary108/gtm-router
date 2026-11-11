@@ -87,13 +87,13 @@ if (!read.ok) {
   console.log(`  preview: ${page.content.slice(0, 160).replace(/\s+/g, " ")}…`);
 }
 
-console.log("\n== MoltSets gtm.search_people ==");
+console.log("\n== MoltSets outmate.search_people ==");
 // Free-tier searches are metered per record, so this asks for the smallest page.
 if (!config.moltsetsKey) {
   console.log("Skipped: set MOLTSETS_API_KEY to exercise the MoltSets adapters.");
 } else {
   const people = await executeAction(
-    "gtm.search_people",
+    "outmate.search_people",
     { company_domain: "vercel.com", seniority: "VP", limit: 1 },
     { moltsetsKey: config.moltsetsKey },
   );
@@ -157,12 +157,12 @@ const providerChecks: Array<{ name: string; configured: boolean; run: () => Prom
   {
     name: "apollo",
     configured: Boolean(config.apolloKey),
-    run: () => executeAction("gtm.apollo_people", { company_domain: "vercel.com", limit: 1 }, engineDeps),
+    run: () => executeAction("outmate.apollo_people", { company_domain: "vercel.com", limit: 1 }, engineDeps),
   },
   {
     name: "hunter",
     configured: Boolean(config.hunterKey),
-    run: () => executeAction("gtm.hunter_domain", { domain: "vercel.com", limit: 1 }, engineDeps),
+    run: () => executeAction("outmate.hunter_domain", { domain: "vercel.com", limit: 1 }, engineDeps),
   },
 ];
 

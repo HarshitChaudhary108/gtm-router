@@ -15,7 +15,7 @@ try {
   if (command === "create" && name) {
     const { token } = store.create(name);
     console.log(`Token for "${name}". It is shown once and cannot be recovered:\n\n${token}\n`);
-    console.log("User runs:  gtm login --url <server> --token <token>");
+    console.log("User runs:  outmate login --url <server> --token <token>");
   } else if (command === "list") {
     const records = store.list();
     if (records.length === 0) console.log("No tokens.");

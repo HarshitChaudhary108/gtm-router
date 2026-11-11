@@ -38,7 +38,7 @@ const server = createServer((req, res) => {
 });
 
 server.listen(config.mcpPort, config.mcpHost, () => {
-  console.log(`gtm-router MCP listening on http://${config.mcpHost}:${config.mcpPort}/mcp`);
+  console.log(`outmate MCP listening on http://${config.mcpHost}:${config.mcpPort}/mcp`);
   console.log(
     `config: tavily=${Boolean(config.tavilyKey)} jina=${Boolean(config.jinaKey)} moltsets=${Boolean(config.moltsetsKey)}` +
       ` llm=${llmConfigured(config)} auth=${Boolean(config.mcpAuthToken) || tokens.exists()} public_url=${config.publicUrl ?? "from request"}`,

@@ -19,7 +19,7 @@ export interface TestServer {
 export async function startServer(
   options: { llm?: LlmClient; fetchImpl?: (url: string, init?: RequestInit) => Promise<Response>; config?: Partial<Config> } = {},
 ): Promise<TestServer> {
-  const dir = mkdtempSync(join(tmpdir(), "gtm-test-"));
+  const dir = mkdtempSync(join(tmpdir(), "outmate-test-"));
   const store = new TokenStore(join(dir, "tokens.json"));
   const server: Server = createServer();
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));

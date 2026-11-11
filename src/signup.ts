@@ -53,8 +53,8 @@ function page(title: string, body: string): string {
 
 function formPage(needsCode: boolean, error?: string, email = ""): string {
   return page(
-    "gtm-router sign up",
-    `<h1>Get your gtm-router token</h1>
+    "outmate sign up",
+    `<h1>Get your outmate token</h1>
 <p>Company, people and web research for your coding agent. Provider keys stay on our server.</p>
 <form method="post" action="/signup">
 <label for="email">Work email</label>
@@ -67,9 +67,9 @@ ${error ? `<p class="err">${escapeHtml(error)}</p>` : ""}
 }
 
 function tokenPage(token: string, host: string): string {
-  const line = `set up gtm-router — ${host}/llms.txt`;
+  const line = `set up outmate — ${host}/llms.txt`;
   return page(
-    "Your gtm-router token",
+    "Your outmate token",
     `<h1>You're in</h1>
 <p>Copy your token now. It is shown only once.</p>
 <div class="step">1. Your token</div>

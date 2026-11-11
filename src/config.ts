@@ -23,6 +23,11 @@ export interface Config {
   browserbaseKey?: string;
   apolloKey?: string;
   hunterKey?: string;
+  /** Nango secret key. When set, each user's provider keys live in Nango (see src/keys.ts). */
+  nangoSecretKey?: string;
+  nangoHost: string;
+  /** Fall back to the server's own provider keys when a user has none. Default on. */
+  sharedKeys: boolean;
   llmBaseUrl: string;
   llmModel: string;
   /** Optional reasoning_effort sent to the LLM (e.g. "low" for Gemini 3 / OpenAI reasoning models). */
@@ -84,7 +89,7 @@ export function parseConfig(env: NodeJS.ProcessEnv = process.env): Config {
     mcpHost: str(env.MCP_HOST) ?? "127.0.0.1",
     mcpAuthToken: str(env.MCP_AUTH_TOKEN),
     publicUrl: str(env.PUBLIC_URL),
-    tokensFile: str(env.GTM_TOKENS_FILE) ?? "data/tokens.json",
+    tokensFile: str(env.OUTMATE_TOKENS_FILE) ?? "data/tokens.json",
     tavilyKey: str(env.TAVILY_API_KEY),
     jinaKey: str(env.JINA_API_KEY),
     llmKey: str(env.LLM_API_KEY),
@@ -98,6 +103,9 @@ export function parseConfig(env: NodeJS.ProcessEnv = process.env): Config {
     browserbaseKey: str(env.BROWSERBASE_API_KEY),
     apolloKey: str(env.APOLLO_API_KEY),
     hunterKey: str(env.HUNTER_API_KEY),
+    nangoSecretKey: str(env.NANGO_SECRET_KEY),
+    nangoHost: (str(env.NANGO_HOST) ?? "https://api.nango.dev").replace(/\/+$/, ""),
+    sharedKeys: str(env.OUTMATE_SHARED_KEYS)?.toLowerCase() !== "false",
     llmBaseUrl: str(env.LLM_BASE_URL) ?? "https://api.deepseek.com/v1",
     llmModel: str(env.LLM_MODEL) ?? "",
     llmReasoningEffort: str(env.LLM_REASONING_EFFORT),
@@ -128,6 +136,7 @@ export function providerStatus(config: Config): Record<string, boolean> {
     apollo: Boolean(config.apolloKey),
     hunter: Boolean(config.hunterKey),
     llm: llmConfigured(config),
+    nango: Boolean(config.nangoSecretKey),
   };
 }
 
@@ -148,5 +157,6 @@ export function secretsOf(config: Config): string[] {
     config.apolloKey,
     config.hunterKey,
     config.mcpAuthToken,
+    config.nangoSecretKey,
   ].filter((s): s is string => Boolean(s));
 }

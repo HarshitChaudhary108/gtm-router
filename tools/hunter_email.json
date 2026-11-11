@@ -1,0 +1,37 @@
+{
+  "name": "outmate.hunter_email",
+  "tool": "hunter_email",
+  "order": 80,
+  "kind": "builtin",
+  "key": "hunter",
+  "needs_key": true,
+  "capability": "find or verify one email (Hunter)",
+  "description": "Find one person's business email (domain + name or LinkedIn URL) or verify an existing email address with Hunter. Returns the email, verification status and confidence score.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "email": {
+        "type": "string",
+        "description": "Email address to verify. When set, other fields are ignored."
+      },
+      "domain": {
+        "type": "string",
+        "description": "Company domain for email lookup."
+      },
+      "first_name": {
+        "type": "string",
+        "description": "Person's first name."
+      },
+      "last_name": {
+        "type": "string",
+        "description": "Person's last name."
+      },
+      "linkedin_url": {
+        "type": "string",
+        "description": "Person's LinkedIn profile URL."
+      }
+    },
+    "required": [],
+    "additionalProperties": false
+  }
+}

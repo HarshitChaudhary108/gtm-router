@@ -1,13 +1,13 @@
 #!/bin/sh
-# gtm-router installer. Installs the gtm CLI into ~/.gtm/bin.
-# It writes only inside that folder. No sudo. No other config is touched until you run `gtm connect`.
+# outmate installer. Installs the outmate CLI into ~/.outmate/bin.
+# It writes only inside that folder. No sudo. No other config is touched until you run `outmate connect`.
 #
 #   curl -fsSL {{HOST}}/install.sh | sh
 #   curl -fsSL {{HOST}}/install.sh | sh -s -- --token <token>   # also signs in and connects
 set -eu
 
 HOST="{{HOST}}"
-DIR="${GTM_HOME:-$HOME/.gtm}"
+DIR="${OUTMATE_HOME:-$HOME/.outmate}"
 TOKEN=""
 
 while [ $# -gt 0 ]; do
@@ -18,25 +18,25 @@ while [ $# -gt 0 ]; do
 done
 
 command -v curl >/dev/null 2>&1 || { echo "curl is required." >&2; exit 1; }
-command -v node >/dev/null 2>&1 || { echo "gtm needs Node.js 18 or newer: https://nodejs.org" >&2; exit 1; }
+command -v node >/dev/null 2>&1 || { echo "outmate needs Node.js 18 or newer: https://nodejs.org" >&2; exit 1; }
 major=$(node -p 'process.versions.node.split(".")[0]')
-[ "$major" -ge 18 ] || { echo "gtm needs Node.js 18 or newer (found $major)." >&2; exit 1; }
+[ "$major" -ge 18 ] || { echo "outmate needs Node.js 18 or newer (found $major)." >&2; exit 1; }
 
-echo "Installing gtm from $HOST"
+echo "Installing outmate from $HOST"
 mkdir -p "$DIR/bin"
 chmod 700 "$DIR"
-curl -fsSL "$HOST/gtm.mjs" -o "$DIR/bin/gtm.mjs.tmp"
-mv "$DIR/bin/gtm.mjs.tmp" "$DIR/bin/gtm.mjs"
-printf '#!/bin/sh\nexec node "%s/bin/gtm.mjs" "$@"\n' "$DIR" > "$DIR/bin/gtm"
-chmod +x "$DIR/bin/gtm"
+curl -fsSL "$HOST/outmate.mjs" -o "$DIR/bin/outmate.mjs.tmp"
+mv "$DIR/bin/outmate.mjs.tmp" "$DIR/bin/outmate.mjs"
+printf '#!/bin/sh\nexec node "%s/bin/outmate.mjs" "$@"\n' "$DIR" > "$DIR/bin/outmate"
+chmod +x "$DIR/bin/outmate"
 
-echo "Wrote: $DIR/bin/gtm and $DIR/bin/gtm.mjs"
+echo "Wrote: $DIR/bin/outmate and $DIR/bin/outmate.mjs"
 
 if [ -n "$TOKEN" ]; then
-  "$DIR/bin/gtm" login --token "$TOKEN"
-  "$DIR/bin/gtm" connect
+  "$DIR/bin/outmate" login --token "$TOKEN"
+  "$DIR/bin/outmate" connect
 else
   echo "Next:"
-  echo "  $DIR/bin/gtm login --token <token>"
-  echo "  $DIR/bin/gtm connect"
+  echo "  $DIR/bin/outmate login --token <token>"
+  echo "  $DIR/bin/outmate connect"
 fi

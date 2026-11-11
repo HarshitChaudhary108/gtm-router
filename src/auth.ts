@@ -51,7 +51,7 @@ export class TokenStore {
     if (!NAME_RE.test(name)) throw new Error("Name must be 1-64 chars: letters, digits, dot, dash, underscore");
     const records = this.list();
     if (records.some((r) => r.name === name)) throw new Error(`Token "${name}" already exists`);
-    const token = `gtm_${randomBytes(32).toString("base64url")}`;
+    const token = `outmate_${randomBytes(32).toString("base64url")}`;
     const record: TokenRecord = { name, hash: sha256(token), created_at: new Date().toISOString() };
     this.save([...records, record]);
     return { token, record };

@@ -7,7 +7,7 @@ import test from "node:test";
 import { authenticate, authRequired, TokenStore } from "../src/auth.js";
 
 const newStore = (): { store: TokenStore; file: string } => {
-  const file = join(mkdtempSync(join(tmpdir(), "gtm-auth-")), "data", "tokens.json");
+  const file = join(mkdtempSync(join(tmpdir(), "outmate-auth-")), "data", "tokens.json");
   return { store: new TokenStore(file), file };
 };
 const reqWith = (authorization?: string): IncomingMessage => ({ headers: authorization ? { authorization } : {} }) as IncomingMessage;
@@ -15,12 +15,12 @@ const reqWith = (authorization?: string): IncomingMessage => ({ headers: authori
 test("create stores only a hash, with a private file mode", () => {
   const { store, file } = newStore();
   const { token } = store.create("alice");
-  assert.match(token, /^gtm_[A-Za-z0-9_-]{43}$/);
+  assert.match(token, /^outmate_[A-Za-z0-9_-]{43}$/);
   assert.ok(!readFileSync(file, "utf8").includes(token), "plaintext token must not be on disk");
   assert.equal(statSync(file).mode & 0o777, 0o600);
   assert.deepEqual(store.verify(token), { name: "alice" });
   assert.equal(store.verify(`${token}x`), undefined);
-  assert.equal(store.verify("gtm_wrong"), undefined);
+  assert.equal(store.verify("outmate_wrong"), undefined);
 });
 
 test("rejects bad and duplicate names", () => {

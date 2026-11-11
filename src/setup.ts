@@ -8,7 +8,7 @@ const ASSETS: Record<string, { file: string; type: string }> = {
   "/llms.txt": { file: "setup/llms.txt", type: "text/plain" },
   "/skill.md": { file: "setup/skill.md", type: "text/markdown" },
   "/install.sh": { file: "setup/install.sh", type: "text/x-shellscript" },
-  "/gtm.mjs": { file: "setup/gtm.mjs", type: "text/javascript" },
+  "/outmate.mjs": { file: "setup/outmate.mjs", type: "text/javascript" },
 };
 
 // Strict on purpose: the host is written into a shell script, so only host[:port] is accepted.

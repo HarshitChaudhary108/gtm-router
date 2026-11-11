@@ -1,6 +1,6 @@
-# gtm-router: operating guide
+# outmate: operating guide
 
-One tool: `gtm_search`. Pass the user's full question in natural language. The server picks the
+One tool: `outmate_search`. Pass the user's full question in natural language. The server picks the
 providers, runs a bounded set of lookups and returns one normalized answer with sources.
 
 ## When to use it
@@ -19,8 +19,8 @@ Do not use it for general knowledge, code questions or anything that needs no li
 
 ## How to call it
 
-- MCP: call the `gtm_search` tool with `{"query": "<question>"}`.
-- CLI: `gtm search "<question>"`.
+- MCP: call the `outmate_search` tool with `{"query": "<question>"}`.
+- CLI: `outmate search "<question>"`.
 
 One call answers one question. A single request runs at most one web search, one company
 lookup, one people lookup and one page read.
@@ -36,7 +36,7 @@ lookup, one people lookup and one page read.
 
 - Treat emails and phone numbers as unverified until checked.
 - Never guess an email address when the tool can look it up.
-- Never ask for or print a provider key or the gtm token.
+- Never ask for or print a provider key or the outmate token.
 - Each call can spend provider credits. Ask once, read the answer, do not retry in a loop.
 - On HTTP 401, the token is wrong or revoked. Ask the human for a new one.
 - On HTTP 429 or 5xx, wait and try once more, then report it.

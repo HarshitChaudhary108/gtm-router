@@ -2,7 +2,10 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
-import { buildEngineDeps, type AppContext } from "./api.js";
+import { buildEngineDepsForKeys, type AppContext } from "./api.js";
+import { createConnections } from "./connections.js";
+import { KeyResolver } from "./keys.js";
+import { ToolCatalog, capabilityLine } from "./tools.js";
 import { authenticate, authRequired, type AuthOptions, type TokenStore } from "./auth.js";
 import { providerStatus, secretsOf } from "./config.js";
 import { executeAction, type EngineDeps } from "./engine.js";
@@ -27,8 +30,8 @@ const TOOL_DESCRIPTION =
   "language.";
 
 const SERVER_INSTRUCTIONS =
-  "This server exposes gtm_search. For any request about companies, accounts, people, titles, " +
-  "business emails, firmographics or company web research, call gtm_search with the user's " +
+  "This server exposes outmate_search. For any request about companies, accounts, people, titles, " +
+  "business emails, firmographics or company web research, call outmate_search with the user's " +
   "full question instead of answering from memory or using a general web search. It handles " +
   "the whole bounded research pipeline in one call.";
 
@@ -84,17 +87,27 @@ function textSummary(result: NormalizedResponse, secrets: string[]): string {
 }
 
 /** One MCP server instance per HTTP request: stateless, no session state to leak between callers. */
-export function createMcpServer(ctx: AppContext, engineDeps: EngineDeps, secrets: string[]): McpServer {
+export function createMcpServer(
+  ctx: AppContext,
+  engineDeps: EngineDeps,
+  secrets: string[],
+  opts: { catalog?: ToolCatalog; hasKey?: (slot: string) => boolean } = {},
+): McpServer {
+  const catalog = opts.catalog;
+  // The description tells the agent what this user's outmate_search can currently do.
+  const description = catalog && opts.hasKey
+    ? `${TOOL_DESCRIPTION} ${capabilityLine(catalog.availableFor(opts.hasKey))}`.trim()
+    : TOOL_DESCRIPTION;
   const server = new McpServer(
-    { name: "gtm-router", version: "0.1.0" },
+    { name: "outmate", version: "0.1.0" },
     { instructions: SERVER_INSTRUCTIONS },
   );
 
   server.registerTool(
-    "gtm_search",
+    "outmate_search",
     {
       title: "GTM research search",
-      description: TOOL_DESCRIPTION,
+      description,
       inputSchema: {
         query: z
           .string()
@@ -111,6 +124,8 @@ export function createMcpServer(ctx: AppContext, engineDeps: EngineDeps, secrets
           config: ctx.config,
           requestId: newRequestId(),
           llm: ctx.llm,
+          tools: catalog,
+          hasKey: opts.hasKey,
           execute: (name, input) => executeAction(name, input, engineDeps),
         });
         return {
@@ -157,9 +172,11 @@ export function createMcpHandler(
   options: McpHandlerOptions = {},
 ): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
   const secrets = secretsOf(ctx.config);
-  const engineDeps = buildEngineDeps(ctx);
+  const catalog = new ToolCatalog();
+  const keys = new KeyResolver(ctx.config, ctx.fetchImpl);
   const signup = createSignup({ config: ctx.config, tokens: options.tokens });
   const authOptions: AuthOptions = { legacyToken: ctx.config.mcpAuthToken, store: options.tokens };
+  const connections = createConnections({ config: ctx.config, auth: authOptions, keys, catalog });
   const allowedHosts = options.allowedHosts ?? [
     `localhost:${ctx.config.mcpPort}`,
     `127.0.0.1:${ctx.config.mcpPort}`,
@@ -177,7 +194,7 @@ export function createMcpHandler(
         }
         sendJson(res, 200, {
           status: "ok",
-          service: "gtm-router-mcp",
+          service: "outmate-mcp",
           endpoint: "/mcp",
           config: providerStatus(ctx.config),
           auth: authRequired(authOptions),
@@ -186,6 +203,7 @@ export function createMcpHandler(
       }
 
       if (await signup(req, res, path)) return;
+      if (await connections(req, res, path)) return;
       if (await serveSetup(req, res, path, { config: ctx.config, tokens: options.tokens })) return;
 
       if (path !== "/mcp") throw new AppError("E_NOT_FOUND", "Not found");
@@ -196,12 +214,20 @@ export function createMcpHandler(
         return;
       }
 
-      if (!authenticate(req, authOptions)) {
+      const identity = authenticate(req, authOptions);
+      if (!identity) {
         sendJson(res, 401, { status: "error", error: "Unauthorized" });
         return;
       }
 
-      const server = createMcpServer(ctx, engineDeps, secrets);
+      // This user's keys (their own from Nango, else the server's) decide which tools they get.
+      const resolved = await keys.forUser(identity.name, catalog.keySlots());
+      const engineDeps = buildEngineDepsForKeys(ctx, resolved.keys, catalog);
+      const userSecrets = [...secrets, ...Object.values(resolved.keys)];
+      const server = createMcpServer(ctx, engineDeps, userSecrets, {
+        catalog,
+        hasKey: (slot) => Boolean(resolved.keys[slot]),
+      });
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined,
         enableJsonResponse: true,

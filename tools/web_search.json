@@ -1,0 +1,50 @@
+{
+  "name": "web.search",
+  "tool": "web_search",
+  "order": 10,
+  "kind": "builtin",
+  "key": "tavily",
+  "needs_key": false,
+  "capability": "web search",
+  "description": "Search the public web and return a bounded list of results (title, URL, snippet, content, score). Use for discovery and research. Does not fetch full page content. Choose a provider with the provider field; tavily is the default.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "Search query. Must be non-empty."
+      },
+      "max_results": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 10,
+        "description": "Number of results to return. Defaults to 5; maximum 10."
+      },
+      "search_depth": {
+        "type": "string",
+        "enum": [
+          "basic",
+          "advanced"
+        ],
+        "description": "Search depth hint. Used by Tavily and Linkup; other providers ignore it."
+      },
+      "provider": {
+        "type": "string",
+        "enum": [
+          "tavily",
+          "parallel",
+          "you",
+          "linkup",
+          "firecrawl",
+          "serper",
+          "apify"
+        ],
+        "description": "Search provider. Defaults to tavily."
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "additionalProperties": false
+  }
+}

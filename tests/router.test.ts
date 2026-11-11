@@ -59,12 +59,12 @@ const PERSON: PeopleResult = {
   score: 0.7,
 };
 
-function step(action: ActionName, provider: string): ExecutionStep {
+function step(action: string, provider: string): ExecutionStep {
   return { action, provider, status: "success", duration_ms: 1 };
 }
 
-function fakeExecute(executed: Array<{ name: ActionName; input: unknown }>) {
-  return async (name: ActionName, input: unknown): Promise<ActionResult> => {
+function fakeExecute(executed: Array<{ name: string; input: unknown }>) {
+  return async (name: string, input: unknown): Promise<ActionResult> => {
     executed.push({ name, input });
     if (name === "web.search") {
       return {
@@ -73,10 +73,10 @@ function fakeExecute(executed: Array<{ name: ActionName; input: unknown }>) {
         data: { query: "acme", results: [SEARCH_RESULT] },
       };
     }
-    if (name === "gtm.search_companies") {
+    if (name === "outmate.search_companies") {
       return { ok: true, record: step(name, "moltsets"), data: { results: [COMPANY], total: 1 } };
     }
-    if (name === "gtm.search_people") {
+    if (name === "outmate.search_people") {
       return { ok: true, record: step(name, "moltsets"), data: { results: [PERSON], total: 1 } };
     }
     const url =
@@ -125,24 +125,25 @@ class FakeLlm implements LlmClient {
   }
 }
 
-function makeDeps(llm: LlmClient, executed: Array<{ name: ActionName; input: unknown }> = []) {
+function makeDeps(llm: LlmClient, executed: Array<{ name: string; input: unknown }> = []) {
   return {
     config,
     requestId: "req_test",
     llm,
     execute: fakeExecute(executed),
     lookup: publicLookup,
+    hasKey: () => true,
   };
 }
 
 test("search-only request stops after one search", async () => {
-  const executed: Array<{ name: ActionName; input: unknown }> = [];
+  const executed: Array<{ name: string; input: unknown }> = [];
   const llm = new FakeLlm([
     toolResponse("web_search", { query: "acme pricing" }),
     finalResponse("Acme lists its plans at https://acme.com/pricing."),
   ]);
 
-  const result = await route("Find Acme's pricing page.", makeDeps(llm, executed));
+  const result = await route("Find Acme's pricing page.", { ...makeDeps(llm, executed), hasKey: () => false });
 
   assert.equal(result.status, "success");
   assert.equal(result.execution.length, 1);
@@ -177,13 +178,14 @@ test("database tools are offered only when their provider key is set", async () 
     "apollo_people",
     "hunter_domain",
     "hunter_email",
+    "hunter_email_count",
     "ask_user",
   ]);
   assert.equal(llm.calls[0]?.messages[0]?.content?.includes("Not available"), false);
 });
 
 test("search followed by reading a returned URL uses both actions", async () => {
-  const executed: Array<{ name: ActionName; input: unknown }> = [];
+  const executed: Array<{ name: string; input: unknown }> = [];
   const llm = new FakeLlm([
     toolResponse("web_search", { query: "acme pricing" }),
     toolResponse("read_url", { url: "https://acme.com/pricing" }, "call_2"),
@@ -204,7 +206,7 @@ test("search followed by reading a returned URL uses both actions", async () => 
 });
 
 test("company search results are returned and allow reading a path on that company's domain", async () => {
-  const executed: Array<{ name: ActionName; input: unknown }> = [];
+  const executed: Array<{ name: string; input: unknown }> = [];
   const llm = new FakeLlm([
     toolResponse("search_companies", { domain: "acme.com" }),
     toolResponse("read_url", { url: "https://acme.com/pricing" }, "call_2"),
@@ -216,7 +218,7 @@ test("company search results are returned and allow reading a path on that compa
   assert.equal(result.status, "success");
   assert.deepEqual(
     result.execution.map((s) => s.action),
-    ["gtm.search_companies", "web.read_url"],
+    ["outmate.search_companies", "web.read_url"],
   );
   assert.equal(result.data.companies.length, 1);
   assert.equal(result.data.companies[0]?.domain, "acme.com");
@@ -225,7 +227,7 @@ test("company search results are returned and allow reading a path on that compa
 });
 
 test("people search results populate data.people with contact details", async () => {
-  const executed: Array<{ name: ActionName; input: unknown }> = [];
+  const executed: Array<{ name: string; input: unknown }> = [];
   const llm = new FakeLlm([
     toolResponse("search_people", { company_domain: "acme.com", seniority: "VP" }),
     finalResponse("Jane Doe is VP Engineering at Acme Corp (jane@acme.com)."),
@@ -234,15 +236,15 @@ test("people search results populate data.people with contact details", async ()
   const result = await route("Find engineering leaders at acme.com.", makeDeps(llm, executed));
 
   assert.equal(result.status, "success");
-  assert.deepEqual(executed.map((c) => c.name), ["gtm.search_people"]);
+  assert.deepEqual(executed.map((c) => c.name), ["outmate.search_people"]);
   assert.equal(result.data.people.length, 1);
   assert.equal(result.data.people[0]?.name, "Jane Doe");
   assert.equal(result.data.people[0]?.business_email, "jane@acme.com");
-  assert.deepEqual(result.execution.map((s) => s.action), ["gtm.search_people"]);
+  assert.deepEqual(result.execution.map((s) => s.action), ["outmate.search_people"]);
 });
 
 test("a second company search is refused by the per-request limit", async () => {
-  const executed: Array<{ name: ActionName; input: unknown }> = [];
+  const executed: Array<{ name: string; input: unknown }> = [];
   const llm = new FakeLlm([
     toolResponse("search_companies", { domain: "acme.com" }),
     toolResponse("search_companies", { query: "acme" }, "call_2"),
@@ -251,7 +253,7 @@ test("a second company search is refused by the per-request limit", async () => 
 
   const result = await route("Research Acme.", makeDeps(llm, executed));
 
-  assert.deepEqual(executed.map((c) => c.name), ["gtm.search_companies"]);
+  assert.deepEqual(executed.map((c) => c.name), ["outmate.search_companies"]);
   assert.equal(result.execution.length, 1);
   const lastMessages = llm.calls.at(-1)?.messages ?? [];
   assert.ok(
@@ -273,7 +275,7 @@ test("MoltSets records reach the model only as untrusted data", async () => {
 });
 
 test("a URL supplied by the user can be read without a search", async () => {
-  const executed: Array<{ name: ActionName; input: unknown }> = [];
+  const executed: Array<{ name: string; input: unknown }> = [];
   const llm = new FakeLlm([
     toolResponse("read_url", { url: "https://example.com" }),
     finalResponse("Example.com is a documentation placeholder domain."),
@@ -288,7 +290,7 @@ test("a URL supplied by the user can be read without a search", async () => {
 });
 
 test("reading a URL that did not come from search or the user is refused", async () => {
-  const executed: Array<{ name: ActionName; input: unknown }> = [];
+  const executed: Array<{ name: string; input: unknown }> = [];
   const llm = new FakeLlm([
     toolResponse("web_search", { query: "acme pricing" }),
     toolResponse("read_url", { url: "https://evil.example.com/" }, "call_2"),
@@ -307,7 +309,7 @@ test("reading a URL that did not come from search or the user is refused", async
 });
 
 test("ambiguous results produce a needs_input response with candidates", async () => {
-  const executed: Array<{ name: ActionName; input: unknown }> = [];
+  const executed: Array<{ name: string; input: unknown }> = [];
   const llm = new FakeLlm([
     toolResponse("ask_user", {
       question: "Which Acme do you mean?",
@@ -339,7 +341,7 @@ test("ask_user without explicit options falls back to search candidates", async 
 });
 
 test("a second search is refused by the per-request limit", async () => {
-  const executed: Array<{ name: ActionName; input: unknown }> = [];
+  const executed: Array<{ name: string; input: unknown }> = [];
   const llm = new FakeLlm([
     toolResponse("web_search", { query: "acme pricing" }),
     toolResponse("web_search", { query: "acme official site" }, "call_2"),
@@ -357,7 +359,7 @@ test("a second search is refused by the per-request limit", async () => {
 });
 
 test("a third execution attempt is refused after one search and one read", async () => {
-  const executed: Array<{ name: ActionName; input: unknown }> = [];
+  const executed: Array<{ name: string; input: unknown }> = [];
   const llm = new FakeLlm([
     toolResponse("web_search", { query: "acme" }),
     toolResponse("read_url", { url: "https://acme.com/pricing" }, "call_2"),
@@ -410,7 +412,7 @@ test("empty natural-language input is rejected", async () => {
 });
 
 test("all failed actions yield status error with a structured error but keep the trace", async () => {
-  const executed: Array<{ name: ActionName; input: unknown }> = [];
+  const executed: Array<{ name: string; input: unknown }> = [];
   const llm = new FakeLlm([
     toolResponse("web_search", { query: "acme" }),
     finalResponse("Search was rate limited."),
@@ -420,7 +422,7 @@ test("all failed actions yield status error with a structured error but keep the
     config,
     requestId: "req_test",
     llm,
-    execute: async (name: ActionName): Promise<ActionResult> => {
+    execute: async (name: string): Promise<ActionResult> => {
       executed.push({ name, input: {} });
       return {
         ok: false,
@@ -439,7 +441,7 @@ test("all failed actions yield status error with a structured error but keep the
 });
 
 test("LLM failures keep the executions that already ran", async () => {
-  const executed: Array<{ name: ActionName; input: unknown }> = [];
+  const executed: Array<{ name: string; input: unknown }> = [];
   const llm = new FakeLlm([toolResponse("web_search", { query: "acme" })]);
 
   await assert.rejects(
@@ -450,7 +452,7 @@ test("LLM failures keep the executions that already ran", async () => {
 });
 
 test("webpage instructions are passed to the model only as untrusted data", async () => {
-  const executed: Array<{ name: ActionName; input: unknown }> = [];
+  const executed: Array<{ name: string; input: unknown }> = [];
   const llm = new FakeLlm([
     toolResponse("web_search", { query: "acme" }),
     toolResponse("read_url", { url: "https://acme.com/pricing" }, "call_2"),
@@ -458,7 +460,7 @@ test("webpage instructions are passed to the model only as untrusted data", asyn
   ]);
 
   const deps = makeDeps(llm, executed);
-  deps.execute = (async (name: ActionName, input: unknown): Promise<ActionResult> => {
+  deps.execute = (async (name: string, input: unknown): Promise<ActionResult> => {
     executed.push({ name, input });
     if (name === "web.search") {
       return { ok: true, record: step(name, "tavily"), data: { query: "acme", results: [SEARCH_RESULT] } };

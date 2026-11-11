@@ -32,7 +32,7 @@ router is also exposed over MCP and was verified end-to-end locally and through 
 
 ---
 
-One-line agent setup (`llms.txt`, installer, `gtm` CLI, per-user tokens): see [docs/SETUP.md](docs/SETUP.md).
+One-line agent setup (`llms.txt`, installer, `outmate` CLI, per-user tokens): see [docs/SETUP.md](docs/SETUP.md).
 
 ## Scope
 
@@ -41,12 +41,12 @@ In scope for this MVP:
 - `web.search` across seven providers: Tavily (default), Parallel, You.com, Linkup, Firecrawl,
   Serper and Apify.
 - `web.read_url` via Jina Reader (default), Firecrawl or Browserbase.
-- `gtm.search_companies` / `gtm.search_people` via MoltSets (firmographic accounts and contacts).
-- `gtm.apollo_companies` / `gtm.apollo_people` via Apollo (account and contact discovery).
-- `gtm.hunter_domain` / `gtm.hunter_email` via Hunter (verified business emails).
+- `outmate.search_companies` / `outmate.search_people` via MoltSets (firmographic accounts and contacts).
+- `outmate.apollo_companies` / `outmate.apollo_people` via Apollo (account and contact discovery).
+- `outmate.hunter_domain` / `outmate.hunter_email` via Hunter (verified business emails).
 - LLM tool calling with a hard budget of **one search + one companies lookup + one people
   lookup + one read per request**.
-- An MCP server exposing the same router as the `gtm_search` tool.
+- An MCP server exposing the same router as the `outmate_search` tool.
 - Shared action registry with JSON schemas and input validation.
 - Direct action endpoints that work without any LLM.
 - Normalized response/error envelopes with request IDs and an execution trace.
@@ -73,7 +73,7 @@ emails; Hunter covers email discovery).
 | Read adapters | `src/adapters/{jina,firecrawl,browserbase}.ts` | Page-read request/response mapping |
 | GTM adapters | `src/adapters/{moltsets,apollo,hunter}.ts` | Companies, people and email mapping |
 | Shared normalizers | `src/adapters/common.ts` | URL sanitation and result shaping shared by adapters |
-| MCP server | `src/mcp.ts`, `src/mcp-server.ts` | `gtm_search` tool over Streamable HTTP, health, optional bearer auth |
+| MCP server | `src/mcp.ts`, `src/mcp-server.ts` | `outmate_search` tool over Streamable HTTP, health, optional bearer auth |
 | URL safety | `src/url-safety.ts` | Scheme, credentials, private IP/hostname and DNS checks |
 | HTTP hardening | `src/http.ts` | Timeouts, transient retries, capped body reads, error mapping |
 | Demo UI | `src/public/index.html` | Run requests, see answer/sources/page/trace/raw JSON |
@@ -94,9 +94,9 @@ executes HTTP itself.
 | Apify | `web.search` | Bearer | Allowlisted `apify~google-search-scraper` actor only |
 | Jina Reader | `web.read_url` (default) | Bearer (optional) | Keyless free tier |
 | Browserbase | `web.read_url` | `X-BB-API-Key` | Fetch only; no JS rendering |
-| MoltSets | `gtm.search_companies`, `gtm.search_people` | Bearer | Contacts include business emails |
-| Apollo | `gtm.apollo_companies`, `gtm.apollo_people` | `x-api-key` | Search returns **no emails**; `has_email` only |
-| Hunter | `gtm.hunter_domain`, `gtm.hunter_email` | `X-API-KEY` header | Emails with verification status and score |
+| MoltSets | `outmate.search_companies`, `outmate.search_people` | Bearer | Contacts include business emails |
+| Apollo | `outmate.apollo_companies`, `outmate.apollo_people` | `x-api-key` | Search returns **no emails**; `has_email` only |
+| Hunter | `outmate.hunter_domain`, `outmate.hunter_email` | `X-API-KEY` header | Emails with verification status and score |
 
 Every read URL passes the SSRF/DNS gate before any provider is called. Keys are sent in
 headers, never query strings, so they do not appear in URLs or logs. Apify is hard-restricted
@@ -241,7 +241,7 @@ curl localhost:3000/api/health
 ```json
 {
   "status": "ok",
-  "service": "gtm-router",
+  "service": "outmate",
   "version": "0.1.0",
   "uptime_s": 12,
   "config": {
@@ -256,9 +256,9 @@ curl localhost:3000/api/health
 
 ### `GET /api/v1/tools`
 
-Lists all eight actions — `web.search`, `web.read_url`, `gtm.search_companies`,
-`gtm.search_people`, `gtm.apollo_companies`, `gtm.apollo_people`, `gtm.hunter_domain`,
-`gtm.hunter_email` — with descriptions, providers and JSON schemas.
+Lists all eight actions — `web.search`, `web.read_url`, `outmate.search_companies`,
+`outmate.search_people`, `outmate.apollo_companies`, `outmate.apollo_people`, `outmate.hunter_domain`,
+`outmate.hunter_email` — with descriptions, providers and JSON schemas.
 
 ### `POST /api/v1/actions/search`
 
@@ -335,7 +335,7 @@ then forces a final answer.
 
 ## MCP server (Claude.ai connector)
 
-`npm run mcp` starts a Streamable HTTP MCP server exposing one tool, `gtm_search`, which
+`npm run mcp` starts a Streamable HTTP MCP server exposing one tool, `outmate_search`, which
 forwards its `query` to the same bounded router (no duplicate routing logic). It listens on
 `MCP_HOST:MCP_PORT` (default `127.0.0.1:3333`), serves `/mcp` (POST only) and `/health`, and
 optionally requires `Authorization: Bearer` when `MCP_AUTH_TOKEN` is set.
@@ -515,10 +515,10 @@ Performed on 2026-10-29 and 2026-11-02 (Tavily, Jina, MoltSets, DeepSeek), exten
   page content.` → `web.search` (Tavily, 2.3 s) → `web.read_url` (Jina, 3.0 s) → detailed answer
   with sources; page truncated at 24,889 chars.
 - MCP (2026-11-04): `npm run mcp` served `/health` and `/mcp`; a real SDK client listed
-  `gtm_search` and called it. `Find engineering leaders at vercel.com.` returned MoltSets people
+  `outmate_search` and called it. `Find engineering leaders at vercel.com.` returned MoltSets people
   with emails and a full `structuredContent` envelope (`isError: false`).
 - HTTPS tunnel (2026-11-04): `ngrok http 3333 --host-header=rewrite` exposed `/health` (200) and
-  `/mcp`; the same SDK client completed discovery and a no-tool `gtm_search` call through the
+  `/mcp`; the same SDK client completed discovery and a no-tool `outmate_search` call through the
   tunnel. The Claude.ai custom-connector dialog itself was **not** exercised — that step needs
   the user's browser; follow [docs/MCP.md](docs/MCP.md).
 - `npm run smoke` — Tavily search succeeded (~778 ms), Jina Reader succeeded (~334 ms), LLM
@@ -527,11 +527,11 @@ Performed on 2026-10-29 and 2026-11-02 (Tavily, Jina, MoltSets, DeepSeek), exten
   ~1.1 s) → answer with sources and a truncated 24,806-char page.
 - Live route: `Research Acme, …` → search succeeded, then `needs_input` with candidate links
   (ambiguous company; refused to read an unrelated page).
-- Live route (2026-11-02): `Find engineering leaders at vercel.com.` → `gtm.search_people`
+- Live route (2026-11-02): `Find engineering leaders at vercel.com.` → `outmate.search_people`
   succeeded in 4.3 s, returning 10 of 412 matching people with titles, LinkedIn URLs and business
   emails; the answer labelled IC-level titles honestly rather than claiming leadership.
 - Live route (2026-11-02): `Find 5 fintech companies in the United States with 51-200
-  employees.` → `gtm.search_companies` succeeded in 1.0 s with 10 records; the answer flagged
+  employees.` → `outmate.search_companies` succeeded in 1.0 s with 10 records; the answer flagged
   mislabelled country data and the absence of a true fintech bucket.
 - Demo UI verified in headless Chromium: configuration banner, run button, answer, sources,
   extracted page, execution trace and raw JSON all rendered; a routed request completed and
