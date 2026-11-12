@@ -1,0 +1,38 @@
+{
+  "name": "custom.builtwith_domain",
+  "tool": "builtwith_domain",
+  "order": 501,
+  "kind": "http",
+  "key": "builtwith",
+  "category": "Buying Signals (Tech, Hiring, Intent)",
+  "needs_key": true,
+  "capability": "what technology a site uses (BuiltWith)",
+  "description": "Technology stack of a website (BuiltWith): CMS, analytics, marketing tools, payments.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "domain": {
+        "type": "string",
+        "description": "Company domain, e.g. vercel.com."
+      }
+    },
+    "required": [
+      "domain"
+    ],
+    "additionalProperties": false
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api.builtwith.com/v21/api.json",
+    "query": {
+      "LOOKUP": "{domain}",
+      "NOMETA": "yes",
+      "NOPII": "yes"
+    },
+    "auth": {
+      "in": "query",
+      "name": "KEY"
+    },
+    "result_path": "Results"
+  }
+}

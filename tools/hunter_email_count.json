@@ -1,0 +1,35 @@
+{
+  "name": "custom.hunter_email_count",
+  "tool": "hunter_email_count",
+  "kind": "http",
+  "key": "hunter",
+  "category": "People & Contact Data",
+  "needs_key": true,
+  "capability": "how many business emails a domain has (Hunter)",
+  "description": "Count how many business email addresses Hunter knows for a company domain, split by department and seniority. Cheap and fast: use it to size a company or check coverage before asking for the emails themselves.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "domain": {
+        "type": "string",
+        "description": "Company domain, e.g. vercel.com."
+      }
+    },
+    "required": [
+      "domain"
+    ],
+    "additionalProperties": false
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api.hunter.io/v2/email-count",
+    "query": {
+      "domain": "{domain}"
+    },
+    "auth": {
+      "in": "header",
+      "name": "X-API-KEY"
+    },
+    "result_path": "data"
+  }
+}

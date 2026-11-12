@@ -1,0 +1,40 @@
+{
+  "name": "custom.findymail_find",
+  "tool": "findymail_find",
+  "order": 307,
+  "kind": "http",
+  "key": "findymail",
+  "category": "People & Contact Data",
+  "needs_key": true,
+  "capability": "find a verified email (Findymail)",
+  "description": "Find a verified work email from a full name and company domain (Findymail).",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Full name."
+      },
+      "domain": {
+        "type": "string",
+        "description": "Company domain, e.g. vercel.com."
+      }
+    },
+    "required": [
+      "name",
+      "domain"
+    ],
+    "additionalProperties": false
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://app.findymail.com/api/search/name",
+    "body": {
+      "name": "{name}",
+      "domain": "{domain}"
+    },
+    "auth": {
+      "in": "bearer"
+    }
+  }
+}

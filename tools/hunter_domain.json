@@ -1,0 +1,43 @@
+{
+  "name": "outmate.hunter_domain",
+  "tool": "hunter_domain",
+  "order": 70,
+  "kind": "builtin",
+  "key": "hunter",
+  "category": "People & Contact Data",
+  "needs_key": true,
+  "capability": "business emails for a domain (Hunter)",
+  "description": "Find business email addresses associated with a company domain using Hunter. Returns name, title, seniority, LinkedIn URL, business email, verification status and confidence score. Use when verified emails are required.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "domain": {
+        "type": "string",
+        "description": "Company domain, e.g. vercel.com."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 100,
+        "description": "Maximum emails. Defaults to 10."
+      },
+      "seniority": {
+        "type": "string",
+        "enum": [
+          "junior",
+          "senior",
+          "executive"
+        ],
+        "description": "Filter by seniority."
+      },
+      "department": {
+        "type": "string",
+        "description": "Filter by department, e.g. engineering, marketing."
+      }
+    },
+    "required": [
+      "domain"
+    ],
+    "additionalProperties": false
+  }
+}

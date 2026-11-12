@@ -1,5 +1,6 @@
 import { AppError } from "./errors.js";
 import { assertPublicHttpUrl } from "./url-safety.js";
+import { builtinTool } from "./tools.js";
 import { isRecord } from "./util.js";
 
 export const SEARCH_PROVIDERS = ["tavily", "parallel", "you", "linkup", "firecrawl", "serper", "apify"] as const;
@@ -113,12 +114,12 @@ export interface JsonSchema {
 export type ActionName =
   | "web.search"
   | "web.read_url"
-  | "gtm.search_companies"
-  | "gtm.search_people"
-  | "gtm.apollo_companies"
-  | "gtm.apollo_people"
-  | "gtm.hunter_domain"
-  | "gtm.hunter_email";
+  | "outmate.search_companies"
+  | "outmate.search_people"
+  | "outmate.apollo_companies"
+  | "outmate.apollo_people"
+  | "outmate.hunter_domain"
+  | "outmate.hunter_email";
 
 export type ActionProvider = SearchProvider | ReadProvider | "moltsets" | "apollo" | "hunter";
 
@@ -183,34 +184,7 @@ function providerParam<T extends string>(value: unknown, allowed: readonly T[], 
 const searchAction: ActionDefinition<SearchParams> = {
   name: "web.search",
   provider: "tavily",
-  description:
-    "Search the public web and return a bounded list of results (title, URL, snippet, content, score). " +
-    "Use for discovery and research. Does not fetch full page content. " +
-    "Choose a provider with the provider field; tavily is the default.",
-  parameters: {
-    type: "object",
-    properties: {
-      query: { type: "string", description: "Search query. Must be non-empty." },
-      max_results: {
-        type: "integer",
-        minimum: 1,
-        maximum: 10,
-        description: "Number of results to return. Defaults to 5; maximum 10.",
-      },
-      search_depth: {
-        type: "string",
-        enum: ["basic", "advanced"],
-        description: "Search depth hint. Used by Tavily and Linkup; other providers ignore it.",
-      },
-      provider: {
-        type: "string",
-        enum: [...SEARCH_PROVIDERS],
-        description: "Search provider. Defaults to tavily.",
-      },
-    },
-    required: ["query"],
-    additionalProperties: false,
-  },
+  ...builtinTool("web.search"),
   parse(input: unknown): SearchParams {
     if (!isRecord(input)) throw validation("search input must be an object");
     const query = typeof input.query === "string" ? input.query.trim() : "";
@@ -241,23 +215,7 @@ const searchAction: ActionDefinition<SearchParams> = {
 const readUrlAction: ActionDefinition<ReadParams> = {
   name: "web.read_url",
   provider: "jina",
-  description:
-    "Extract readable content from a known public HTTP(S) URL. " +
-    "Returns the page title, description, main content and final URL. " +
-    "Choose a provider with the provider field; jina is the default.",
-  parameters: {
-    type: "object",
-    properties: {
-      url: { type: "string", description: "Absolute public http:// or https:// URL to read." },
-      provider: {
-        type: "string",
-        enum: [...READ_PROVIDERS],
-        description: "Read provider. Defaults to jina.",
-      },
-    },
-    required: ["url"],
-    additionalProperties: false,
-  },
+  ...builtinTool("web.read_url"),
   parse(input: unknown): ReadParams {
     if (!isRecord(input)) throw validation("read_url input must be an object");
     const url = assertPublicHttpUrl(input.url);
@@ -387,47 +345,9 @@ const COMPANY_FILTER_KEYS = [
 ] as const;
 
 const searchCompaniesAction: ActionDefinition<CompanySearchParams> = {
-  name: "gtm.search_companies",
+  name: "outmate.search_companies",
   provider: "moltsets",
-  description:
-    "Search MoltSets' B2B company database by name, exact domain, industry, employee range, revenue range, " +
-    "NAICS code, LinkedIn industry or location. Returns domain, size, revenue range, location and LinkedIn URL. " +
-    "Use for account research and ICP lists. At most one call per request.",
-  parameters: {
-    type: "object",
-    properties: {
-      query: { type: "string", description: "Company name free-text search. Use domain for a known company." },
-      domain: { type: "string", description: "Exact company domain, e.g. vercel.com. URLs are normalized." },
-      industry: { type: "string", enum: [...INDUSTRIES], description: "Exact industry bucket." },
-      employee_range: { type: "string", enum: [...EMPLOYEE_RANGES], description: "Employee count band." },
-      revenue_range: { type: "string", enum: [...REVENUE_RANGES], description: "Revenue band." },
-      naics_code: { type: "string", description: "2-6 digit NAICS code." },
-      linkedin_industry: { type: "string", description: "Exact LinkedIn industry label." },
-      country: { type: "string", description: "Full English country name." },
-      state: { type: "string", description: "Full state/region name or abbreviation." },
-      exclude_domain: {
-        type: "array",
-        items: { type: "string" },
-        maxItems: 25,
-        description: "Domains to suppress, e.g. existing customers or vendors.",
-      },
-      exclude_industry: { type: "array", items: { type: "string" }, maxItems: 25 },
-      exclude_employee_range: {
-        type: "array",
-        items: { type: "string", enum: [...EMPLOYEE_RANGES] },
-        maxItems: 25,
-      },
-      exclude_revenue_range: {
-        type: "array",
-        items: { type: "string", enum: [...REVENUE_RANGES] },
-        maxItems: 25,
-      },
-      limit: { type: "integer", minimum: 1, maximum: 10, description: "Results per page. Defaults to 10; maximum 10." },
-      offset: { type: "integer", minimum: 0, maximum: 10000, description: "Results to skip for pagination." },
-    },
-    required: [],
-    additionalProperties: false,
-  },
+  ...builtinTool("outmate.search_companies"),
   parse(input: unknown): CompanySearchParams {
     if (!isRecord(input)) throw validation("search_companies input must be an object");
 
@@ -474,46 +394,9 @@ const PEOPLE_FILTER_KEYS = [
 ] as const;
 
 const searchPeopleAction: ActionDefinition<PeopleSearchParams> = {
-  name: "gtm.search_people",
+  name: "outmate.search_people",
   provider: "moltsets",
-  description:
-    "Search MoltSets' B2B people database by name, title, company or domain, seniority, department, location, " +
-    "industry or company size. Returns title, seniority, LinkedIn URL, business email and company. " +
-    "Use for finding contacts at an account. At most one call per request.",
-  parameters: {
-    type: "object",
-    properties: {
-      query: { type: "string", description: "Person name free-text search." },
-      title: { type: "string", description: "Job title match, e.g. Head of Marketing." },
-      company: { type: "string", description: "Company name." },
-      company_domain: { type: "string", description: "Exact company domain, e.g. vercel.com." },
-      city: { type: "string", description: "City name." },
-      seniority: { type: "string", description: "Seniority level, e.g. Manager, Director, VP." },
-      department: { type: "string", description: "Department. Do not combine with functional_area." },
-      functional_area: { type: "string", description: "Functional area. Do not combine with department." },
-      industry: { type: "string", enum: [...INDUSTRIES], description: "Exact company industry bucket." },
-      employee_range: { type: "string", enum: [...EMPLOYEE_RANGES], description: "Company employee count band." },
-      revenue_range: { type: "string", enum: [...REVENUE_RANGES], description: "Company revenue band." },
-      naics_code: { type: "string", description: "2-6 digit NAICS code." },
-      linkedin_industry: { type: "string", description: "Exact LinkedIn industry label." },
-      country: { type: "string", description: "Full English country name." },
-      state: { type: "string", description: "Full state/region name or abbreviation." },
-      exclude_company_domain: { type: "array", items: { type: "string" }, maxItems: 25 },
-      exclude_country: { type: "array", items: { type: "string" }, maxItems: 25 },
-      exclude_state: { type: "array", items: { type: "string" }, maxItems: 25 },
-      exclude_industry: { type: "array", items: { type: "string" }, maxItems: 25 },
-      exclude_seniority: { type: "array", items: { type: "string" }, maxItems: 25 },
-      exclude_employee_range: {
-        type: "array",
-        items: { type: "string", enum: [...EMPLOYEE_RANGES] },
-        maxItems: 25,
-      },
-      limit: { type: "integer", minimum: 1, maximum: 10, description: "Results per page. Defaults to 10; maximum 10." },
-      offset: { type: "integer", minimum: 0, maximum: 10000, description: "Results to skip for pagination." },
-    },
-    required: [],
-    additionalProperties: false,
-  },
+  ...builtinTool("outmate.search_people"),
   parse(input: unknown): PeopleSearchParams {
     if (!isRecord(input)) throw validation("search_people input must be an object");
 
@@ -556,26 +439,9 @@ const searchPeopleAction: ActionDefinition<PeopleSearchParams> = {
 const APOLLO_COMPANY_FILTER_KEYS = ["query", "domain", "location", "employee_range", "industry"] as const;
 
 const apolloCompaniesAction: ActionDefinition<ApolloCompanyParams> = {
-  name: "gtm.apollo_companies",
+  name: "outmate.apollo_companies",
   provider: "apollo",
-  description:
-    "Search Apollo's B2B organization database by name, domain, location, employee range or industry. " +
-    "Returns name, domain, industry, estimated employees, location and LinkedIn URL. " +
-    "Use as an alternative account source to MoltSets.",
-  parameters: {
-    type: "object",
-    properties: {
-      query: { type: "string", description: "Organization name or keyword." },
-      domain: { type: "string", description: "Company domain, e.g. vercel.com." },
-      location: { type: "string", description: "Headquarters location, e.g. United States or California." },
-      employee_range: { type: "string", description: 'Employee band as comma-separated bounds, e.g. "51,200".' },
-      industry: { type: "string", description: "Industry keyword." },
-      limit: { type: "integer", minimum: 1, maximum: 100, description: "Results per page. Defaults to 10." },
-      page: { type: "integer", minimum: 1, maximum: 500, description: "Page number. Defaults to 1." },
-    },
-    required: [],
-    additionalProperties: false,
-  },
+  ...builtinTool("outmate.apollo_companies"),
   parse(input: unknown): ApolloCompanyParams {
     if (!isRecord(input)) throw validation("apollo_companies input must be an object");
     const params = {
@@ -595,26 +461,9 @@ const apolloCompaniesAction: ActionDefinition<ApolloCompanyParams> = {
 const APOLLO_PEOPLE_FILTER_KEYS = ["query", "title", "seniority", "location", "company_domain"] as const;
 
 const apolloPeopleAction: ActionDefinition<ApolloPeopleParams> = {
-  name: "gtm.apollo_people",
+  name: "outmate.apollo_people",
   provider: "apollo",
-  description:
-    "Search Apollo's B2B people database by keyword, title, seniority, location or company domain. " +
-    "Returns name, title, seniority, location, LinkedIn URL and company. " +
-    "Apollo search does not return email addresses; use Hunter for emails.",
-  parameters: {
-    type: "object",
-    properties: {
-      query: { type: "string", description: "Person name or keyword." },
-      title: { type: "string", description: "Job title, e.g. Head of Marketing." },
-      seniority: { type: "string", description: "Seniority level, e.g. director, vp, c_suite." },
-      location: { type: "string", description: "Person location, e.g. United States." },
-      company_domain: { type: "string", description: "Company domain, e.g. vercel.com." },
-      limit: { type: "integer", minimum: 1, maximum: 100, description: "Results per page. Defaults to 10." },
-      page: { type: "integer", minimum: 1, maximum: 500, description: "Page number. Defaults to 1." },
-    },
-    required: [],
-    additionalProperties: false,
-  },
+  ...builtinTool("outmate.apollo_people"),
   parse(input: unknown): ApolloPeopleParams {
     if (!isRecord(input)) throw validation("apollo_people input must be an object");
     const params = {
@@ -634,23 +483,9 @@ const apolloPeopleAction: ActionDefinition<ApolloPeopleParams> = {
 const HUNTER_SENIORITIES = ["junior", "senior", "executive"] as const;
 
 const hunterDomainAction: ActionDefinition<HunterDomainParams> = {
-  name: "gtm.hunter_domain",
+  name: "outmate.hunter_domain",
   provider: "hunter",
-  description:
-    "Find business email addresses associated with a company domain using Hunter. " +
-    "Returns name, title, seniority, LinkedIn URL, business email, verification status and confidence score. " +
-    "Use when verified emails are required.",
-  parameters: {
-    type: "object",
-    properties: {
-      domain: { type: "string", description: "Company domain, e.g. vercel.com." },
-      limit: { type: "integer", minimum: 1, maximum: 100, description: "Maximum emails. Defaults to 10." },
-      seniority: { type: "string", enum: [...HUNTER_SENIORITIES], description: "Filter by seniority." },
-      department: { type: "string", description: "Filter by department, e.g. engineering, marketing." },
-    },
-    required: ["domain"],
-    additionalProperties: false,
-  },
+  ...builtinTool("outmate.hunter_domain"),
   parse(input: unknown): HunterDomainParams {
     if (!isRecord(input)) throw validation("hunter_domain input must be an object");
     return {
@@ -663,23 +498,9 @@ const hunterDomainAction: ActionDefinition<HunterDomainParams> = {
 };
 
 const hunterEmailAction: ActionDefinition<HunterEmailParams> = {
-  name: "gtm.hunter_email",
+  name: "outmate.hunter_email",
   provider: "hunter",
-  description:
-    "Find one person's business email (domain + name or LinkedIn URL) or verify an existing email address with Hunter. " +
-    "Returns the email, verification status and confidence score.",
-  parameters: {
-    type: "object",
-    properties: {
-      email: { type: "string", description: "Email address to verify. When set, other fields are ignored." },
-      domain: { type: "string", description: "Company domain for email lookup." },
-      first_name: { type: "string", description: "Person's first name." },
-      last_name: { type: "string", description: "Person's last name." },
-      linkedin_url: { type: "string", description: "Person's LinkedIn profile URL." },
-    },
-    required: [],
-    additionalProperties: false,
-  },
+  ...builtinTool("outmate.hunter_email"),
   parse(input: unknown): HunterEmailParams {
     if (!isRecord(input)) throw validation("hunter_email input must be an object");
 
@@ -705,12 +526,12 @@ const hunterEmailAction: ActionDefinition<HunterEmailParams> = {
 export const ACTIONS = {
   "web.search": searchAction,
   "web.read_url": readUrlAction,
-  "gtm.search_companies": searchCompaniesAction,
-  "gtm.search_people": searchPeopleAction,
-  "gtm.apollo_companies": apolloCompaniesAction,
-  "gtm.apollo_people": apolloPeopleAction,
-  "gtm.hunter_domain": hunterDomainAction,
-  "gtm.hunter_email": hunterEmailAction,
+  "outmate.search_companies": searchCompaniesAction,
+  "outmate.search_people": searchPeopleAction,
+  "outmate.apollo_companies": apolloCompaniesAction,
+  "outmate.apollo_people": apolloPeopleAction,
+  "outmate.hunter_domain": hunterDomainAction,
+  "outmate.hunter_email": hunterEmailAction,
 } as const;
 
 export function listActions(): Array<{

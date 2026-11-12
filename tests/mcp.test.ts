@@ -96,13 +96,13 @@ async function connect(harness: Harness, headers?: Record<string, string>): Prom
   return client;
 }
 
-test("gtm_search is discoverable with a query input schema", async () => {
+test("outmate_search is discoverable with a query input schema", async () => {
   const harness = await startHarness({ llm: fakeLlm(() => finalAnswer("unused")) });
   try {
     const client = await connect(harness);
     const { tools } = await client.listTools();
     assert.equal(tools.length, 1);
-    assert.equal(tools[0]?.name, "gtm_search");
+    assert.equal(tools[0]?.name, "outmate_search");
     assert.match(tools[0]?.description ?? "", /business email|company/i);
     assert.deepEqual((tools[0]?.inputSchema as { required?: string[] }).required, ["query"]);
     await client.close();
@@ -125,7 +125,7 @@ test("forwards the query into the router and returns sources + structured conten
   try {
     const client = await connect(harness);
     const result = (await client.callTool({
-      name: "gtm_search",
+      name: "outmate_search",
       arguments: { query: "What does Acme charge?" },
     })) as {
       content: Array<{ type: string; text: string }>;
@@ -160,7 +160,7 @@ test("provider failure is reported as an error without leaking the API key", asy
   const harness = await startHarness({ llm, fetchImpl });
   try {
     const client = await connect(harness);
-    const result = (await client.callTool({ name: "gtm_search", arguments: { query: "acme" } })) as {
+    const result = (await client.callTool({ name: "outmate_search", arguments: { query: "acme" } })) as {
       content: Array<{ text: string }>;
       isError?: boolean;
     };
@@ -182,7 +182,7 @@ test("router timeout surfaces as an error result", async () => {
   const harness = await startHarness({ llm });
   try {
     const client = await connect(harness);
-    const result = (await client.callTool({ name: "gtm_search", arguments: { query: "acme" } })) as {
+    const result = (await client.callTool({ name: "outmate_search", arguments: { query: "acme" } })) as {
       content: Array<{ text: string }>;
       isError?: boolean;
     };
@@ -203,7 +203,7 @@ test("empty search results still produce a normal answer", async () => {
   const harness = await startHarness({ llm, fetchImpl });
   try {
     const client = await connect(harness);
-    const result = (await client.callTool({ name: "gtm_search", arguments: { query: "acme" } })) as {
+    const result = (await client.callTool({ name: "outmate_search", arguments: { query: "acme" } })) as {
       content: Array<{ text: string }>;
       isError?: boolean;
     };
@@ -220,7 +220,7 @@ test("rejects an empty query before touching the router", async () => {
   const harness = await startHarness({ llm });
   try {
     const client = await connect(harness);
-    const result = (await client.callTool({ name: "gtm_search", arguments: { query: "   " } })) as {
+    const result = (await client.callTool({ name: "outmate_search", arguments: { query: "   " } })) as {
       content: Array<{ text: string }>;
       isError?: boolean;
     };
@@ -239,7 +239,7 @@ test("health endpoint reports provider presence as booleans", async () => {
     const res = await fetch(`http://127.0.0.1:${harness.url.port}/health`);
     assert.equal(res.status, 200);
     const body = (await res.json()) as { service: string; config: Record<string, unknown>; auth: boolean };
-    assert.equal(body.service, "gtm-router-mcp");
+    assert.equal(body.service, "outmate-mcp");
     assert.equal(body.config.tavily, true);
     assert.equal(body.config.jina, false);
     assert.equal(body.auth, false);
@@ -264,7 +264,7 @@ test("bearer auth rejects missing or wrong tokens and accepts the configured one
 
     const client = await connect(harness, { Authorization: "Bearer test-token-abcdef" });
     const { tools } = await client.listTools();
-    assert.equal(tools[0]?.name, "gtm_search");
+    assert.equal(tools[0]?.name, "outmate_search");
     await client.close();
   } finally {
     await harness.close();

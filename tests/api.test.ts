@@ -135,12 +135,12 @@ test("tools lists every registered action with schemas", async () => {
   assert.deepEqual(body.actions.map((a: { name: string }) => a.name), [
     "web.search",
     "web.read_url",
-    "gtm.search_companies",
-    "gtm.search_people",
-    "gtm.apollo_companies",
-    "gtm.apollo_people",
-    "gtm.hunter_domain",
-    "gtm.hunter_email",
+    "outmate.search_companies",
+    "outmate.search_people",
+    "outmate.apollo_companies",
+    "outmate.apollo_people",
+    "outmate.hunter_domain",
+    "outmate.hunter_email",
   ]);
   for (const action of body.actions) {
     assert.equal(action.parameters.type, "object");
@@ -188,7 +188,7 @@ test("direct read endpoint rejects private destinations before any provider call
   assert.equal(fetchCalls.length, before);
 });
 
-test("direct company search endpoint executes gtm.search_companies", async () => {
+test("direct company search endpoint executes outmate.search_companies", async () => {
   const res = await post("/api/v1/actions/search-companies", { domain: "acme.com" });
   const body = await bodyOf(res);
   assert.equal(res.status, 200);
@@ -196,11 +196,11 @@ test("direct company search endpoint executes gtm.search_companies", async () =>
   assert.equal(body.answer, "Found 1 of 1 matching company.");
   assert.equal(body.data.companies[0].name, "Acme Corp");
   assert.equal(body.data.companies[0].domain, "acme.com");
-  assert.equal(body.execution[0].action, "gtm.search_companies");
+  assert.equal(body.execution[0].action, "outmate.search_companies");
   assert.equal(body.execution[0].provider, "moltsets");
 });
 
-test("direct people search endpoint executes gtm.search_people", async () => {
+test("direct people search endpoint executes outmate.search_people", async () => {
   const res = await post("/api/v1/actions/search-people", { company_domain: "acme.com", seniority: "VP" });
   const body = await bodyOf(res);
   assert.equal(res.status, 200);
@@ -208,7 +208,7 @@ test("direct people search endpoint executes gtm.search_people", async () => {
   assert.equal(body.data.people[0].name, "Jane Doe");
   assert.equal(body.data.people[0].business_email, "jane@acme.com");
   assert.equal(body.data.people[0].company_name, "Acme Corp");
-  assert.equal(body.execution[0].action, "gtm.search_people");
+  assert.equal(body.execution[0].action, "outmate.search_people");
 });
 
 test("company search endpoint validates filters", async () => {

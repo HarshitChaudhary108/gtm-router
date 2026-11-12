@@ -1,0 +1,50 @@
+{
+  "name": "outmate.apollo_companies",
+  "tool": "apollo_companies",
+  "order": 50,
+  "kind": "builtin",
+  "key": "apollo",
+  "category": "Company, Firmographic & Funding",
+  "needs_key": true,
+  "capability": "company search (Apollo)",
+  "description": "Search Apollo's B2B organization database by name, domain, location, employee range or industry. Returns name, domain, industry, estimated employees, location and LinkedIn URL. Use as an alternative account source to MoltSets.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "Organization name or keyword."
+      },
+      "domain": {
+        "type": "string",
+        "description": "Company domain, e.g. vercel.com."
+      },
+      "location": {
+        "type": "string",
+        "description": "Headquarters location, e.g. United States or California."
+      },
+      "employee_range": {
+        "type": "string",
+        "description": "Employee band as comma-separated bounds, e.g. \"51,200\"."
+      },
+      "industry": {
+        "type": "string",
+        "description": "Industry keyword."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 100,
+        "description": "Results per page. Defaults to 10."
+      },
+      "page": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 500,
+        "description": "Page number. Defaults to 1."
+      }
+    },
+    "required": [],
+    "additionalProperties": false
+  }
+}

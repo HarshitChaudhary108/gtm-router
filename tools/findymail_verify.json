@@ -1,0 +1,34 @@
+{
+  "name": "custom.findymail_verify",
+  "tool": "findymail_verify",
+  "order": 308,
+  "kind": "http",
+  "key": "findymail",
+  "category": "Email & Phone Verification",
+  "needs_key": true,
+  "capability": "email verification (Findymail)",
+  "description": "Verify an email address (Findymail).",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "email": {
+        "type": "string",
+        "description": "Email address to check."
+      }
+    },
+    "required": [
+      "email"
+    ],
+    "additionalProperties": false
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://app.findymail.com/api/verify",
+    "body": {
+      "email": "{email}"
+    },
+    "auth": {
+      "in": "bearer"
+    }
+  }
+}

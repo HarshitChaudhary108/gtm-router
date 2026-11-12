@@ -1,0 +1,49 @@
+{
+  "name": "custom.hubspot_search_contacts",
+  "tool": "hubspot_search_contacts",
+  "order": 901,
+  "kind": "http",
+  "key": "hubspot",
+  "category": "CRM",
+  "needs_key": true,
+  "capability": "your HubSpot contacts",
+  "description": "Search your own HubSpot contacts by name, email or company. Read only.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "Name, email or company."
+      },
+      "limit": {
+        "type": "integer",
+        "description": "How many results (1-10).",
+        "minimum": 1,
+        "maximum": 10
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "additionalProperties": false
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.hubapi.com/crm/v3/objects/contacts/search",
+    "body": {
+      "query": "{query}",
+      "limit": "{limit}",
+      "properties": [
+        "firstname",
+        "lastname",
+        "email",
+        "jobtitle",
+        "company"
+      ]
+    },
+    "auth": {
+      "in": "bearer"
+    },
+    "result_path": "results"
+  }
+}

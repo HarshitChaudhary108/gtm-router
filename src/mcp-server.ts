@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { TokenStore } from "./auth.js";
 import { llmConfigured, loadEnv, parseConfig } from "./config.js";
 import { createLlmClient } from "./llm.js";
 import { createMcpHandler } from "./mcp.js";
@@ -12,11 +13,13 @@ const llm =
         apiKey: config.llmKey,
         baseUrl: config.llmBaseUrl,
         model: config.llmModel,
+        reasoningEffort: config.llmReasoningEffort,
         timeoutMs: config.llmTimeoutMs,
       })
     : undefined;
 
-const handler = createMcpHandler({ config, llm });
+const tokens = new TokenStore(config.tokensFile);
+const handler = createMcpHandler({ config, llm }, { tokens });
 
 const server = createServer((req, res) => {
   const started = Date.now();
@@ -35,10 +38,10 @@ const server = createServer((req, res) => {
 });
 
 server.listen(config.mcpPort, config.mcpHost, () => {
-  console.log(`gtm-router MCP listening on http://${config.mcpHost}:${config.mcpPort}/mcp`);
+  console.log(`outmate MCP listening on http://${config.mcpHost}:${config.mcpPort}/mcp`);
   console.log(
     `config: tavily=${Boolean(config.tavilyKey)} jina=${Boolean(config.jinaKey)} moltsets=${Boolean(config.moltsetsKey)}` +
-      ` llm=${llmConfigured(config)} auth=${Boolean(config.mcpAuthToken)}`,
+      ` llm=${llmConfigured(config)} auth=${Boolean(config.mcpAuthToken) || tokens.exists()} public_url=${config.publicUrl ?? "from request"}`,
   );
   console.log("router embedded; REST server optional (npm start)");
 });

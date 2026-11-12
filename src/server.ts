@@ -12,6 +12,7 @@ const llm =
         apiKey: config.llmKey,
         baseUrl: config.llmBaseUrl,
         model: config.llmModel,
+        reasoningEffort: config.llmReasoningEffort,
         timeoutMs: config.llmTimeoutMs,
       })
     : undefined;
@@ -35,7 +36,7 @@ const server = createServer((req, res) => {
 });
 
 server.listen(config.port, () => {
-  console.log(`gtm-router listening on http://localhost:${config.port}`);
+  console.log(`outmate listening on http://localhost:${config.port}`);
   console.log(
     `config: tavily=${Boolean(config.tavilyKey)} jina=${Boolean(config.jinaKey)} llm=${llmConfigured(config)}` +
       (config.llmModel ? ` model=${config.llmModel}` : ""),

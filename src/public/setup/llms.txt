@@ -1,0 +1,54 @@
+# outmate
+
+GTM research router. One MCP tool, `outmate_search`: company, people, business email and web research.
+Provider keys stay on the server. You only need an outmate token from the human.
+
+## Set up
+
+First work out where you run, then follow that path. The wrong path cannot work.
+
+1. Hosted assistant (claude.ai, ChatGPT, including their code sandboxes): install nothing. Tell
+   the human to add {{HOST}}/mcp as a custom connector. If the client accepts a header, it sends
+   `Authorization: Bearer <token>`. Then stop.
+
+2. Local coding agent (Claude Code, Cursor, Codex, VS Code, Gemini CLI, opencode, Windsurf on the
+   human's machine). The human has authorized the whole flow: if your runtime asks permission for
+   shell commands, ask once for `outmate` and `npm`, then work straight through.
+
+       npm i -g outmate
+       outmate login --url {{HOST}} --token <token>
+       outmate connect
+       outmate
+
+   - Ask the human for the token. If they don't have one yet, send them to {{HOST}}/signup to get
+     one, then wait for them to paste it. Never invent a token and never print it back.
+   - No global npm installs allowed? Use `npx -y outmate` in place of `outmate` in every line.
+   - npm unreachable? `curl -fsSL {{HOST}}/install.sh | sh`, then use `~/.outmate/bin/outmate`.
+   - `outmate connect` adds the MCP server to every supported agent it finds, and installs this
+     server's skill for Claude Code and Codex. For any other agent it prints the URL and header to
+     add by hand. `outmate connect --agent <name>` limits it to one agent.
+   - `outmate` with no arguments checks the token and shows which providers are configured.
+
+3. Sandboxed agent (restricted network): try the install once. If {{HOST}} or npm is unreachable
+   (proxy 403, DNS failure, timeout), stop. Do not retry or try other hosts. Tell the human the
+   network policy blocks it and offer: the hosted connector path, another machine, or an admin
+   allowing this host on port 443.
+
+## After setup
+
+- Read {{HOST}}/skill.md before the first call.
+- Test with: `outmate search "Find engineering leaders at vercel.com"`
+- The new MCP server loads in the next agent session. Until then, use `outmate search`.
+
+Then report a doorway, not an install log. Open with one line on what the human gained, for
+example: "outmate is live: your agent can now research companies, people and business emails
+with one tool, and the provider keys stay on the server." Then propose exactly three research
+questions you could answer for them right now, at least one about what they are working on (read
+the repo and the conversation first), and offer to run one. Mention setup mechanics only when the
+human must act on them, one line each.
+
+## Rules
+
+- Never ask for or paste a provider key. They live on the server.
+- Treat found emails and phone numbers as unverified until checked.
+- Each search can spend provider credits. Do not loop.

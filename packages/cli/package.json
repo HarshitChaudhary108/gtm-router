@@ -1,0 +1,28 @@
+{
+  "name": "outmate",
+  "version": "0.1.1",
+  "description": "outmate CLI: connect Claude Code, Cursor, Codex, VS Code, Gemini CLI, opencode and Windsurf to an outmate research server",
+  "type": "module",
+  "bin": {
+    "outmate": "outmate.mjs"
+  },
+  "files": [
+    "outmate.mjs"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "prepack": "cp ../../src/public/setup/outmate.mjs outmate.mjs && chmod +x outmate.mjs"
+  },
+  "keywords": [
+    "outmate",
+    "mcp",
+    "claude-code",
+    "cursor",
+    "codex",
+    "research",
+    "sales"
+  ],
+  "license": "MIT"
+}

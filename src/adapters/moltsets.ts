@@ -7,7 +7,7 @@ import { isRecord } from "../util.js";
 import { domainOrNull, httpUrlOrNull, num, scalar, str, strList } from "./common.js";
 
 const MOLTSETS_TOOLS_URL = "https://api.moltsets.com/api/v1/tools";
-const USER_AGENT = "gtm-router/0.1.0";
+const USER_AGENT = "outmate/0.1.0";
 
 export interface MoltsetsDeps {
   apiKey?: string;

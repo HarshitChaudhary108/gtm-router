@@ -1,0 +1,51 @@
+{
+  "name": "custom.predictleads_news_events",
+  "tool": "predictleads_news_events",
+  "order": 511,
+  "kind": "http",
+  "key": "predictleads",
+  "key_help": "Save as api_key:api_token (the two values joined by a colon).",
+  "category": "Buying Signals (Tech, Hiring, Intent)",
+  "needs_key": true,
+  "capability": "company news events (PredictLeads)",
+  "description": "Recent news events about a company (PredictLeads): partnerships, product launches, hires, expansion.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "domain": {
+        "type": "string",
+        "description": "Company domain, e.g. stripe.com."
+      },
+      "limit": {
+        "type": "integer",
+        "description": "How many results (1-20).",
+        "minimum": 1,
+        "maximum": 20
+      }
+    },
+    "required": [
+      "domain"
+    ],
+    "additionalProperties": false
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://predictleads.com/api/v3/companies/{domain}/news_events",
+    "query": {
+      "limit": "{limit}"
+    },
+    "auth": [
+      {
+        "in": "header",
+        "name": "X-Api-Key",
+        "part": 0
+      },
+      {
+        "in": "header",
+        "name": "X-Api-Token",
+        "part": 1
+      }
+    ],
+    "result_path": "data"
+  }
+}

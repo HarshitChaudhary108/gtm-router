@@ -1,0 +1,46 @@
+{
+  "name": "custom.ocean_lookalike",
+  "tool": "ocean_lookalike",
+  "order": 402,
+  "kind": "http",
+  "key": "ocean",
+  "category": "Company, Firmographic & Funding",
+  "needs_key": true,
+  "capability": "lookalike companies (Ocean.io)",
+  "description": "Find companies similar to a given company domain (Ocean.io).",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "domain": {
+        "type": "string",
+        "description": "Domain of the company to find lookalikes of."
+      },
+      "limit": {
+        "type": "integer",
+        "description": "How many results (1-10).",
+        "minimum": 1,
+        "maximum": 10
+      }
+    },
+    "required": [
+      "domain"
+    ],
+    "additionalProperties": false
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.ocean.io/v3/search/companies",
+    "body": {
+      "size": "{limit}",
+      "companiesFilters": {
+        "lookalikeDomains": [
+          "{domain}"
+        ]
+      }
+    },
+    "auth": {
+      "in": "header",
+      "name": "x-api-token"
+    }
+  }
+}

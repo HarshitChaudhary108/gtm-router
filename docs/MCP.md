@@ -1,12 +1,12 @@
 # GTM Router over MCP (Claude.ai connector)
 
-The MCP server exposes **one tool**, `gtm_search`, which forwards the query to the existing
+The MCP server exposes **one tool**, `outmate_search`, which forwards the query to the existing
 router unchanged: the LLM picks registered actions, the engine executes them against the
 configured providers, and the normalized envelope comes back. There is no second routing
 algorithm in the adapter.
 
 ```
-Claude.ai ──MCP/Streamable HTTP──▶ gtm-router MCP adapter ──▶ existing router ──▶ providers
+Claude.ai ──MCP/Streamable HTTP──▶ outmate MCP adapter ──▶ existing router ──▶ providers
 ```
 
 The MCP server is embedded in this repository and is meant for **local development**. It
@@ -53,7 +53,7 @@ Health check:
 
 ```bash
 curl -s http://127.0.0.1:3333/health
-# {"status":"ok","service":"gtm-router-mcp","endpoint":"/mcp","config":{...booleans...},"auth":false}
+# {"status":"ok","service":"outmate-mcp","endpoint":"/mcp","config":{...booleans...},"auth":false}
 ```
 
 ## 3. Verify locally with MCP Inspector
@@ -64,7 +64,7 @@ npx @modelcontextprotocol/inspector
 
 - Transport: **Streamable HTTP**
 - URL: `http://127.0.0.1:3333/mcp`
-- Connect → **List Tools** should show `gtm_search` → **Call Tool** with
+- Connect → **List Tools** should show `outmate_search` → **Call Tool** with
   `{"query":"Find engineering leaders at vercel.com."}`.
 
 The text result contains the answer, any company/person rows, source URLs, and the execution
@@ -90,7 +90,7 @@ custom connector** with:
 - URL: `https://<ngrok-host>/mcp`
 - Transport: Streamable HTTP
 
-Then ask a question in a chat; Claude should call `gtm_search` and cite the returned sources.
+Then ask a question in a chat; Claude should call `outmate_search` and cite the returned sources.
 
 ### Making Claude actually call it
 
@@ -103,7 +103,7 @@ for them. To maximize the odds:
   connector). Near-duplicate tools split the model's preference.
 - Enable **GTM Router** for the conversation — connectors are toggled per chat.
 - If a research prompt still goes to built-in web search, say once: "use the GTM Router
-  `gtm_search` tool". The rest of that conversation will usually stay on it.
+  `outmate_search` tool". The rest of that conversation will usually stay on it.
 
 The model's choice is probabilistic; there is no "always invoke" toggle in Claude.ai.
 

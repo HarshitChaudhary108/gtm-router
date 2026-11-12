@@ -49,22 +49,22 @@ test("web.read_url accepts read providers and defaults to jina", () => {
 });
 
 test("apollo and hunter actions validate their filters", () => {
-  expectAppError(() => ACTIONS["gtm.apollo_companies"].parse({}), "E_VALIDATION");
-  expectAppError(() => ACTIONS["gtm.apollo_people"].parse({}), "E_VALIDATION");
-  assert.equal(ACTIONS["gtm.apollo_people"].parse({ company_domain: "vercel.com", limit: 5 }).limit, 5);
+  expectAppError(() => ACTIONS["outmate.apollo_companies"].parse({}), "E_VALIDATION");
+  expectAppError(() => ACTIONS["outmate.apollo_people"].parse({}), "E_VALIDATION");
+  assert.equal(ACTIONS["outmate.apollo_people"].parse({ company_domain: "vercel.com", limit: 5 }).limit, 5);
 
-  assert.equal(ACTIONS["gtm.hunter_domain"].parse({ domain: "https://www.vercel.com/pricing" }).domain, "www.vercel.com");
-  expectAppError(() => ACTIONS["gtm.hunter_domain"].parse({}), "E_VALIDATION");
+  assert.equal(ACTIONS["outmate.hunter_domain"].parse({ domain: "https://www.vercel.com/pricing" }).domain, "www.vercel.com");
+  expectAppError(() => ACTIONS["outmate.hunter_domain"].parse({}), "E_VALIDATION");
 
-  assert.equal(ACTIONS["gtm.hunter_email"].parse({ email: "a@b.com" }).email, "a@b.com");
-  assert.deepEqual(ACTIONS["gtm.hunter_email"].parse({ domain: "vercel.com", first_name: "A", last_name: "B" }), {
+  assert.equal(ACTIONS["outmate.hunter_email"].parse({ email: "a@b.com" }).email, "a@b.com");
+  assert.deepEqual(ACTIONS["outmate.hunter_email"].parse({ domain: "vercel.com", first_name: "A", last_name: "B" }), {
     domain: "vercel.com",
     first_name: "A",
     last_name: "B",
     linkedin_url: undefined,
   });
-  expectAppError(() => ACTIONS["gtm.hunter_email"].parse({}), "E_VALIDATION");
-  expectAppError(() => ACTIONS["gtm.hunter_email"].parse({ domain: "vercel.com" }), "E_VALIDATION");
+  expectAppError(() => ACTIONS["outmate.hunter_email"].parse({}), "E_VALIDATION");
+  expectAppError(() => ACTIONS["outmate.hunter_email"].parse({ domain: "vercel.com" }), "E_VALIDATION");
 });
 
 test("web.search rejects invalid queries", () => {
@@ -142,7 +142,7 @@ test("assertPublicHttpUrl accepts public IP literals", () => {
 });
 
 test("search_companies applies paging defaults and trims filters", () => {
-  assert.deepEqual(ACTIONS["gtm.search_companies"].parse({ domain: "  Acme.com ", country: ["United States"] }), {
+  assert.deepEqual(ACTIONS["outmate.search_companies"].parse({ domain: "  Acme.com ", country: ["United States"] }), {
     query: undefined,
     domain: "Acme.com",
     industry: undefined,
@@ -162,35 +162,35 @@ test("search_companies applies paging defaults and trims filters", () => {
 });
 
 test("search_companies requires at least one positive filter", () => {
-  expectAppError(() => ACTIONS["gtm.search_companies"].parse({}), "E_VALIDATION");
-  expectAppError(() => ACTIONS["gtm.search_companies"].parse({ exclude_domain: ["acme.com"] }), "E_VALIDATION");
+  expectAppError(() => ACTIONS["outmate.search_companies"].parse({}), "E_VALIDATION");
+  expectAppError(() => ACTIONS["outmate.search_companies"].parse({ exclude_domain: ["acme.com"] }), "E_VALIDATION");
 });
 
 test("search_companies rejects out-of-range paging and unknown enum values", () => {
-  expectAppError(() => ACTIONS["gtm.search_companies"].parse({ domain: "a.com", limit: 11 }), "E_VALIDATION");
-  expectAppError(() => ACTIONS["gtm.search_companies"].parse({ domain: "a.com", offset: -1 }), "E_VALIDATION");
+  expectAppError(() => ACTIONS["outmate.search_companies"].parse({ domain: "a.com", limit: 11 }), "E_VALIDATION");
+  expectAppError(() => ACTIONS["outmate.search_companies"].parse({ domain: "a.com", offset: -1 }), "E_VALIDATION");
   expectAppError(
-    () => ACTIONS["gtm.search_companies"].parse({ domain: "a.com", offset: 9995, limit: 10 }),
+    () => ACTIONS["outmate.search_companies"].parse({ domain: "a.com", offset: 9995, limit: 10 }),
     "E_VALIDATION",
   );
   expectAppError(
-    () => ACTIONS["gtm.search_companies"].parse({ industry: "Not An Industry" }),
+    () => ACTIONS["outmate.search_companies"].parse({ industry: "Not An Industry" }),
     "E_VALIDATION",
   );
-  expectAppError(() => ACTIONS["gtm.search_companies"].parse({ employee_range: "51-1000" }), "E_VALIDATION");
-  expectAppError(() => ACTIONS["gtm.search_companies"].parse({ naics_code: "abc" }), "E_VALIDATION");
+  expectAppError(() => ACTIONS["outmate.search_companies"].parse({ employee_range: "51-1000" }), "E_VALIDATION");
+  expectAppError(() => ACTIONS["outmate.search_companies"].parse({ naics_code: "abc" }), "E_VALIDATION");
 });
 
 test("search_people rejects department combined with functional_area", () => {
   expectAppError(
-    () => ACTIONS["gtm.search_people"].parse({ company_domain: "acme.com", department: "Sales", functional_area: "GTM" }),
+    () => ACTIONS["outmate.search_people"].parse({ company_domain: "acme.com", department: "Sales", functional_area: "GTM" }),
     "E_VALIDATION",
   );
-  expectAppError(() => ACTIONS["gtm.search_people"].parse({}), "E_VALIDATION");
+  expectAppError(() => ACTIONS["outmate.search_people"].parse({}), "E_VALIDATION");
 });
 
 test("search_people accepts arrays and maps them through", () => {
-  const parsed = ACTIONS["gtm.search_people"].parse({
+  const parsed = ACTIONS["outmate.search_people"].parse({
     company_domain: ["acme.com", "example.com"],
     seniority: "VP",
     limit: 5,
@@ -203,6 +203,6 @@ test("search_people accepts arrays and maps them through", () => {
 
 test("MoltSets filter arrays are bounded", () => {
   const tooMany = Array.from({ length: 26 }, (_, i) => `c${i}.com`);
-  expectAppError(() => ACTIONS["gtm.search_companies"].parse({ domain: tooMany }), "E_VALIDATION");
-  expectAppError(() => ACTIONS["gtm.search_companies"].parse({ domain: [] }), "E_VALIDATION");
+  expectAppError(() => ACTIONS["outmate.search_companies"].parse({ domain: tooMany }), "E_VALIDATION");
+  expectAppError(() => ACTIONS["outmate.search_companies"].parse({ domain: [] }), "E_VALIDATION");
 });

@@ -1,0 +1,48 @@
+{
+  "name": "custom.hubspot_search_companies",
+  "tool": "hubspot_search_companies",
+  "order": 902,
+  "kind": "http",
+  "key": "hubspot",
+  "category": "CRM",
+  "needs_key": true,
+  "capability": "your HubSpot companies",
+  "description": "Search your own HubSpot companies by name or domain. Read only.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "Name or domain."
+      },
+      "limit": {
+        "type": "integer",
+        "description": "How many results (1-10).",
+        "minimum": 1,
+        "maximum": 10
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "additionalProperties": false
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.hubapi.com/crm/v3/objects/companies/search",
+    "body": {
+      "query": "{query}",
+      "limit": "{limit}",
+      "properties": [
+        "name",
+        "domain",
+        "industry",
+        "numberofemployees"
+      ]
+    },
+    "auth": {
+      "in": "bearer"
+    },
+    "result_path": "results"
+  }
+}
