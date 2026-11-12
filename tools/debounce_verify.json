@@ -1,0 +1,35 @@
+{
+  "name": "custom.debounce_verify",
+  "tool": "debounce_verify",
+  "order": 604,
+  "kind": "http",
+  "key": "debounce",
+  "category": "Email & Phone Verification",
+  "needs_key": true,
+  "capability": "email verification (DeBounce)",
+  "description": "Check whether an email address is deliverable (DeBounce).",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "email": {
+        "type": "string",
+        "description": "Email address to check."
+      }
+    },
+    "required": [
+      "email"
+    ],
+    "additionalProperties": false
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api.debounce.io/v1/",
+    "query": {
+      "email": "{email}"
+    },
+    "auth": {
+      "in": "query",
+      "name": "api"
+    }
+  }
+}

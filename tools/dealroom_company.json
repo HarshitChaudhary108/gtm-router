@@ -1,0 +1,55 @@
+{
+  "name": "custom.dealroom_company",
+  "tool": "dealroom_company",
+  "order": 411,
+  "kind": "http",
+  "key": "dealroom",
+  "key_help": "Save as client_id:client_secret (the two values joined by a colon).",
+  "category": "Company, Firmographic & Funding",
+  "needs_key": true,
+  "capability": "company profile and total funding (Dealroom)",
+  "description": "Full Dealroom profile of one company by its uuid: tagline, employees, headquarters and total funding.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "uuid": {
+        "type": "string",
+        "description": "Dealroom company id (a UUID, from dealroom_match_company).",
+        "pattern": "^[0-9a-fA-F-]{36}$"
+      }
+    },
+    "required": [
+      "uuid"
+    ],
+    "additionalProperties": false
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api.dealroom.app/data/companies/{uuid}",
+    "auth": [
+      {
+        "in": "bearer",
+        "from": "exchange"
+      },
+      {
+        "in": "header",
+        "name": "X-Client-Id",
+        "part": 0
+      }
+    ],
+    "token_exchange": {
+      "url": "https://accounts.dealroom.co/oauth/token",
+      "body": {
+        "grant_type": "client_credentials",
+        "client_id": "{key.0}",
+        "client_secret": "{key.1}",
+        "audience": "https://api.dealroom.app"
+      }
+    },
+    "headers": {
+      "User-Agent": "outmate-router/1.0"
+    },
+    "result_path": "data",
+    "timeout_ms": 30000
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "name": "custom.dealroom_match_company",
+  "tool": "dealroom_match_company",
+  "order": 410,
+  "kind": "http",
+  "key": "dealroom",
+  "key_help": "Save as client_id:client_secret (the two values joined by a colon).",
+  "category": "Company, Firmographic & Funding",
+  "needs_key": true,
+  "capability": "startup and funding data (Dealroom)",
+  "description": "Find a company in Dealroom by website and/or name and get its Dealroom id (uuid), headquarters and tagline. Exact domain and name matching. Use the uuid with dealroom_company or dealroom_funding_rounds.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "website": {
+        "type": "string",
+        "description": "Company website or domain, e.g. stripe.com."
+      },
+      "name": {
+        "type": "string",
+        "description": "Company name."
+      }
+    },
+    "required": [],
+    "additionalProperties": false
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.dealroom.app/data/companies/matches",
+    "body": {
+      "items": [
+        {
+          "row": 0,
+          "website": "{website}",
+          "name": "{name}"
+        }
+      ]
+    },
+    "auth": [
+      {
+        "in": "bearer",
+        "from": "exchange"
+      },
+      {
+        "in": "header",
+        "name": "X-Client-Id",
+        "part": 0
+      }
+    ],
+    "token_exchange": {
+      "url": "https://accounts.dealroom.co/oauth/token",
+      "body": {
+        "grant_type": "client_credentials",
+        "client_id": "{key.0}",
+        "client_secret": "{key.1}",
+        "audience": "https://api.dealroom.app"
+      }
+    },
+    "headers": {
+      "User-Agent": "outmate-router/1.0"
+    },
+    "result_path": "data.0.candidates",
+    "timeout_ms": 30000
+  }
+}

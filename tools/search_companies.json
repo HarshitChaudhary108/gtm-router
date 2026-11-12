@@ -4,6 +4,7 @@
   "order": 30,
   "kind": "builtin",
   "key": "moltsets",
+  "category": "Company, Firmographic & Funding",
   "needs_key": true,
   "capability": "company search (MoltSets)",
   "description": "Search MoltSets' B2B company database by name, exact domain, industry, employee range, revenue range, NAICS code, LinkedIn industry or location. Returns domain, size, revenue range, location and LinkedIn URL. Use for account research and ICP lists. At most one call per request.",

@@ -1,0 +1,56 @@
+{
+  "name": "custom.hubspot_propose_contacts",
+  "tool": "hubspot_propose_contacts",
+  "order": 910,
+  "kind": "internal",
+  "handler": "hubspot_propose_contacts",
+  "key": "hubspot-write",
+  "category": "CRM",
+  "needs_key": true,
+  "capability": "propose HubSpot contact changes (nothing is written until you approve)",
+  "description": "Prepare changes to the user's HubSpot contacts: add people who are missing and fill blank fields on people already there. It writes NOTHING: it checks HubSpot, stores a proposal and returns its id; the user must approve before anything is sent. Use it only when the user asks to add, save or update people in HubSpot, and only with values that appeared in tool results or in the user's message. Never invent emails or job titles. Existing HubSpot values are never overwritten. After calling it, tell the user the proposal id and that it needs their approval.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "contacts": {
+        "type": "array",
+        "maxItems": 10,
+        "description": "People to add or complete. Each needs an email, or both firstname and lastname.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "firstname": {
+              "type": "string"
+            },
+            "lastname": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            },
+            "jobtitle": {
+              "type": "string"
+            },
+            "company": {
+              "type": "string",
+              "description": "Company name."
+            },
+            "phone": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "source_note": {
+        "type": "string",
+        "maxLength": 300,
+        "description": "Where this data came from, e.g. 'LinkedIn via web search, Hunter'. Written into the note on each record."
+      }
+    },
+    "required": [
+      "contacts"
+    ],
+    "additionalProperties": false
+  }
+}

@@ -229,7 +229,8 @@ export async function route(input: unknown, deps: RouterDeps): Promise<Normalize
   const catalog = deps.tools ?? defaultCatalog;
   const hasKey = deps.hasKey ?? ((slot: string) => Boolean(sharedKey(deps.config, slot)));
   const { defs: tools, missing: missingTools } = toolsFor(catalog, hasKey);
-  const missing = missingTools.map((t) => t.tool);
+  // Only the first-party tools are worth naming as unavailable; the long provider list would just cost tokens.
+  const missing = missingTools.filter((t) => t.kind === "builtin").map((t) => t.tool);
   const systemPrompt = missing.length
     ? `${SYSTEM_PROMPT}\n\nNot available in this deployment: ${missing.join(", ")}. Use web_search to find people and companies instead.` +
       (missing.includes("search_people")
@@ -372,7 +373,7 @@ export async function route(input: unknown, deps: RouterDeps): Promise<Normalize
         continue;
       }
 
-      if (toolFile.kind === "http") {
+      if (toolFile.kind === "http" || toolFile.kind === "internal") {
         if (counts.custom.has(actionName)) {
           pushToolError(call, errorPayload(
             new AppError("E_EXECUTION_LIMIT", `Only one ${call.name} is allowed per request. Use the results already returned.`),

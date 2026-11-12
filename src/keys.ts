@@ -19,6 +19,17 @@ const SHARED_FIELDS: Record<string, keyof Config> = {
   hunter: "hunterKey",
 };
 
+/** The server's own extra fields for a slot, e.g. SALESFORCE_INSTANCE_URL. */
+export function sharedMeta(config: Config, slot: string): Record<string, string> {
+  if (!config.sharedKeys) return {};
+  const out: Record<string, string> = {};
+  for (const field of META_FIELDS) {
+    const value = process.env[`${slot.toUpperCase().replace(/-/g, "_")}_${field.toUpperCase()}`]?.trim();
+    if (value) out[field] = value;
+  }
+  return out;
+}
+
 /** The server's own key for a provider slot, or undefined (also when shared keys are switched off). */
 export function sharedKey(config: Config, slot: string): string | undefined {
   if (!config.sharedKeys) return undefined;
@@ -30,9 +41,14 @@ export function sharedKey(config: Config, slot: string): string | undefined {
 
 export type KeySource = "own" | "shared" | "none";
 
+/** Extra connection fields a tool may need besides the key. Only these are ever read. */
+const META_FIELDS = ["instance_url"] as const;
+
 export interface ResolvedKeys {
   /** slot -> key, for the slots that have one. */
   keys: Record<string, string>;
+  /** slot -> extra connection fields (e.g. a Salesforce instance_url). */
+  meta: Record<string, Record<string, string>>;
   /** slot -> where it came from. */
   source: Record<string, KeySource>;
 }
@@ -42,6 +58,7 @@ interface Cached {
   /** Slots already looked up, whether or not the user has a key for them. */
   checked: Set<string>;
   keys: Record<string, string>;
+  meta: Record<string, Record<string, string>>;
 }
 
 const TTL_MS = 60_000;
@@ -88,9 +105,9 @@ export class KeyResolver {
   }
 
   /** The user's own keys, one per slot they have connected in Nango. */
-  private async own(user: string, slots: string[]): Promise<Record<string, string>> {
+  private async own(user: string, slots: string[]): Promise<Pick<Cached, "keys" | "meta">> {
     const hit = this.cache.get(user);
-    if (hit && this.now() - hit.at < TTL_MS && slots.every((s) => hit.checked.has(s))) return hit.keys;
+    if (hit && this.now() - hit.at < TTL_MS && slots.every((s) => hit.checked.has(s))) return hit;
 
     const listed = await this.nango<{ connections?: unknown }>(
       `/connections?tags[end_user_id]=${encodeURIComponent(user)}`,
@@ -104,46 +121,60 @@ export class KeyResolver {
     }
 
     const keys: Record<string, string> = {};
+    const meta: Record<string, Record<string, string>> = {};
     await Promise.all(
       slots.map(async (slot) => {
         const connectionId = byIntegration.get(slot);
         if (!connectionId) return;
         try {
-          const conn = await this.nango<{ credentials?: unknown }>(
+          const conn = await this.nango<{ credentials?: unknown; connection_config?: unknown }>(
             `/connections/${encodeURIComponent(connectionId)}?provider_config_key=${encodeURIComponent(slot)}`,
           );
           const cred = isRecord(conn.credentials) ? conn.credentials : {};
           const key = cred.apiKey ?? cred.api_key ?? cred.access_token;
           if (typeof key === "string" && key) keys[slot] = key;
+          const config = isRecord(conn.connection_config) ? conn.connection_config : {};
+          const extra: Record<string, string> = {};
+          for (const field of META_FIELDS) {
+            const value = config[field];
+            if (typeof value === "string" && value) extra[field] = value;
+          }
+          if (Object.keys(extra).length) meta[slot] = extra;
         } catch {
           // This provider's connection is unreadable: treat it as not connected.
         }
       }),
     );
-    this.cache.set(user, { at: this.now(), checked: new Set(slots), keys });
-    return keys;
+    this.cache.set(user, { at: this.now(), checked: new Set(slots), keys, meta });
+    return { keys, meta };
   }
 
   async forUser(user: string | null, slots: string[]): Promise<ResolvedKeys> {
     let own: Record<string, string> = {};
+    let ownMeta: Record<string, Record<string, string>> = {};
     if (this.nangoEnabled() && user) {
       try {
-        own = await this.own(user, slots);
+        const found = await this.own(user, slots);
+        own = found.keys;
+        ownMeta = found.meta;
       } catch (err) {
         // Nango down: fall back to shared keys rather than failing every search.
         console.error(`nango lookup failed: ${err instanceof AppError ? err.code : "error"}`);
       }
     }
-    const resolved: ResolvedKeys = { keys: {}, source: {} };
+    const resolved: ResolvedKeys = { keys: {}, meta: {}, source: {} };
     for (const slot of slots) {
       const mine = own[slot];
       const shared = this.shared(slot);
       if (mine) {
         resolved.keys[slot] = mine;
         resolved.source[slot] = "own";
+        if (ownMeta[slot]) resolved.meta[slot] = ownMeta[slot];
       } else if (shared) {
         resolved.keys[slot] = shared;
         resolved.source[slot] = "shared";
+        const extra = sharedMeta(this.config, slot);
+        if (Object.keys(extra).length) resolved.meta[slot] = extra;
       } else {
         resolved.source[slot] = "none";
       }

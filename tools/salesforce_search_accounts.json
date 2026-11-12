@@ -1,0 +1,45 @@
+{
+  "name": "custom.salesforce_search_accounts",
+  "tool": "salesforce_search_accounts",
+  "order": 920,
+  "kind": "http",
+  "key": "salesforce",
+  "key_help": "Connect with Salesforce sign-in. The access token and your instance address come from the connection.",
+  "category": "CRM",
+  "needs_key": true,
+  "capability": "your Salesforce accounts",
+  "description": "Search your own Salesforce accounts by name: industry, website, employees, owner. Read only.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Part of the name. Letters, numbers, spaces and . & , - only.",
+        "pattern": "^[A-Za-z0-9 .&,-]{1,80}$",
+        "maxLength": 80
+      }
+    },
+    "required": [
+      "name"
+    ],
+    "additionalProperties": false
+  },
+  "request": {
+    "method": "GET",
+    "url": "/services/data/v60.0/query",
+    "base_from": {
+      "field": "instance_url",
+      "suffixes": [
+        ".salesforce.com",
+        ".force.com"
+      ]
+    },
+    "query": {
+      "q": "SELECT Id, Name, Website, Industry, NumberOfEmployees, Owner.Name FROM Account WHERE Name LIKE '%{name}%' LIMIT 10"
+    },
+    "auth": {
+      "in": "bearer"
+    },
+    "result_path": "records"
+  }
+}

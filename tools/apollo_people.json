@@ -4,6 +4,7 @@
   "order": 60,
   "kind": "builtin",
   "key": "apollo",
+  "category": "People & Contact Data",
   "needs_key": true,
   "capability": "people search (Apollo)",
   "description": "Search Apollo's B2B people database by keyword, title, seniority, location or company domain. Returns name, title, seniority, location, LinkedIn URL and company. Apollo search does not return email addresses; use Hunter for emails.",

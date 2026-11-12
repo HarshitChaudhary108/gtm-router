@@ -4,6 +4,7 @@
   "order": 20,
   "kind": "builtin",
   "key": "jina",
+  "category": "Web Search, Crawling & Research",
   "needs_key": false,
   "capability": "reading a web page",
   "description": "Extract readable content from a known public HTTP(S) URL. Returns the page title, description, main content and final URL. Choose a provider with the provider field; jina is the default.",

@@ -8,6 +8,7 @@ import type { ActionName } from "../src/registry.js";
 import { route } from "../src/router.js";
 import type { CompanyResult, ExecutionStep, PeopleResult, SearchResult } from "../src/types.js";
 import { isRecord } from "../src/util.js";
+import { coreCatalog } from "./core-tools.js";
 
 const config = parseConfig({});
 const publicLookup = async () => [{ address: "93.184.216.34" }];
@@ -133,6 +134,7 @@ function makeDeps(llm: LlmClient, executed: Array<{ name: string; input: unknown
     execute: fakeExecute(executed),
     lookup: publicLookup,
     hasKey: () => true,
+    tools: coreCatalog(),
   };
 }
 

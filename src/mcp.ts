@@ -7,7 +7,9 @@ import { createConnections } from "./connections.js";
 import { KeyResolver } from "./keys.js";
 import { ToolCatalog, capabilityLine } from "./tools.js";
 import { authenticate, authRequired, type AuthOptions, type TokenStore } from "./auth.js";
-import { providerStatus, secretsOf } from "./config.js";
+import { LIMITS, providerStatus, secretsOf } from "./config.js";
+import { ProposalStore, renderProposal, type Proposal } from "./proposals.js";
+import { applyApproved, parseApply } from "./writeback.js";
 import { executeAction, type EngineDeps } from "./engine.js";
 import { AppError, redactSecrets, toAppError } from "./errors.js";
 import { route } from "./router.js";
@@ -28,6 +30,13 @@ const TOOL_DESCRIPTION =
   "over general web search or memory for people, company, contact and email lookups; never " +
   "guess an email address when this tool can check. Pass the user's full question in natural " +
   "language.";
+
+const WRITE_NOTE =
+  " HubSpot write-back is on for this user. When they ask to add or update people in HubSpot, call this tool " +
+  "to get a proposal and show them the proposed changes exactly as returned. Only after they explicitly approve, " +
+  "call this tool again with the query exactly: apply <proposal id>. Never apply a proposal on your own.";
+
+const WRITE_KEY = "hubspot-write";
 
 const SERVER_INSTRUCTIONS =
   "This server exposes outmate_search. For any request about companies, accounts, people, titles, " +
@@ -94,10 +103,14 @@ export function createMcpServer(
   opts: { catalog?: ToolCatalog; hasKey?: (slot: string) => boolean } = {},
 ): McpServer {
   const catalog = opts.catalog;
+  // Write-back is only on for a user who connected HubSpot with write access.
+  const writeKey = engineDeps.extraKeys?.[WRITE_KEY];
+  const canWrite = Boolean(writeKey && engineDeps.proposals && engineDeps.user);
   // The description tells the agent what this user's outmate_search can currently do.
-  const description = catalog && opts.hasKey
+  const base = catalog && opts.hasKey
     ? `${TOOL_DESCRIPTION} ${capabilityLine(catalog.availableFor(opts.hasKey))}`.trim()
     : TOOL_DESCRIPTION;
+  const description = canWrite ? `${base}${WRITE_NOTE}` : base;
   const server = new McpServer(
     { name: "outmate", version: "0.1.0" },
     { instructions: SERVER_INSTRUCTIONS },
@@ -116,21 +129,45 @@ export function createMcpServer(
           .max(ctx.config.maxRequestChars)
           .describe("The user's research question or instruction, in natural language."),
       },
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      // A user who can write is not "read only": the client then asks before running it.
+      annotations: { readOnlyHint: !canWrite, destructiveHint: false, openWorldHint: true },
     },
     async ({ query }) => {
       try {
+        const approvalId = parseApply(query);
+        if (approvalId) {
+          if (!canWrite) {
+            return {
+              content: [{ type: "text" as const, text: "No HubSpot write connection for this user, so nothing was written. Connect HubSpot with write access on the Connections page." }],
+              isError: true,
+            };
+          }
+          const applied = await applyApproved(approvalId, {
+            apiKey: writeKey,
+            user: engineDeps.user,
+            store: engineDeps.proposals,
+            fetchImpl: engineDeps.fetchImpl,
+            retryDelayMs: engineDeps.retryDelayMs,
+            timeoutMs: engineDeps.searchTimeoutMs ?? LIMITS.searchTimeoutMs,
+          });
+          return { content: [{ type: "text" as const, text: redactSecrets(applied.text, secrets) }], isError: !applied.ok };
+        }
+
+        // Proposals made while answering are collected so the server can show them word for word.
+        const proposed: Proposal[] = [];
+        const deps: EngineDeps = { ...engineDeps, onProposal: (p) => proposed.push(p) };
         const result = await route(query, {
           config: ctx.config,
           requestId: newRequestId(),
           llm: ctx.llm,
           tools: catalog,
           hasKey: opts.hasKey,
-          execute: (name, input) => executeAction(name, input, engineDeps),
+          execute: (name, input) => executeAction(name, input, deps),
         });
+        const shown = [textSummary(result, secrets), ...proposed.map((p) => redactSecrets(renderProposal(p), secrets))];
         return {
-          content: [{ type: "text" as const, text: textSummary(result, secrets) }],
-          structuredContent: result as unknown as Record<string, unknown>,
+          content: [{ type: "text" as const, text: shown.join("\n\n") }],
+          structuredContent: { ...result, proposals: proposed.map((p) => p.id) } as unknown as Record<string, unknown>,
           isError: result.status === "error",
         };
       } catch (err) {
@@ -174,6 +211,7 @@ export function createMcpHandler(
   const secrets = secretsOf(ctx.config);
   const catalog = new ToolCatalog();
   const keys = new KeyResolver(ctx.config, ctx.fetchImpl);
+  const proposals = new ProposalStore();
   const signup = createSignup({ config: ctx.config, tokens: options.tokens });
   const authOptions: AuthOptions = { legacyToken: ctx.config.mcpAuthToken, store: options.tokens };
   const connections = createConnections({ config: ctx.config, auth: authOptions, keys, catalog });
@@ -222,8 +260,10 @@ export function createMcpHandler(
 
       // This user's keys (their own from Nango, else the server's) decide which tools they get.
       const resolved = await keys.forUser(identity.name, catalog.keySlots());
-      const engineDeps = buildEngineDepsForKeys(ctx, resolved.keys, catalog);
-      const userSecrets = [...secrets, ...Object.values(resolved.keys)];
+      const engineDeps = buildEngineDepsForKeys(ctx, resolved.keys, catalog, { user: identity.name, proposals, extraMeta: resolved.meta });
+      // A key saved as "first:second" is also hidden half by half.
+      const halves = Object.values(resolved.keys).flatMap((k) => (k.includes(":") ? k.split(/:(.*)/s).slice(0, 2) : []));
+      const userSecrets = [...secrets, ...Object.values(resolved.keys), ...halves.filter((h) => h.length >= 6)];
       const server = createMcpServer(ctx, engineDeps, userSecrets, {
         catalog,
         hasKey: (slot) => Boolean(resolved.keys[slot]),

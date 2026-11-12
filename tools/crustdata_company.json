@@ -1,0 +1,36 @@
+{
+  "name": "custom.crustdata_company",
+  "tool": "crustdata_company",
+  "order": 410,
+  "kind": "http",
+  "key": "crustdata",
+  "category": "Company, Firmographic & Funding",
+  "needs_key": true,
+  "capability": "company headcount and hiring data (Crustdata)",
+  "description": "Company enrichment from a domain: headcount, growth, funding (Crustdata).",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "domain": {
+        "type": "string",
+        "description": "Company domain, e.g. vercel.com."
+      }
+    },
+    "required": [
+      "domain"
+    ],
+    "additionalProperties": false
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api.crustdata.com/screener/company",
+    "query": {
+      "company_domain": "{domain}"
+    },
+    "auth": {
+      "in": "header",
+      "name": "Authorization",
+      "prefix": "Token "
+    }
+  }
+}

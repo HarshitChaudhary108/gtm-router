@@ -1,0 +1,35 @@
+{
+  "name": "custom.kickbox_verify",
+  "tool": "kickbox_verify",
+  "order": 602,
+  "kind": "http",
+  "key": "kickbox",
+  "category": "Email & Phone Verification",
+  "needs_key": true,
+  "capability": "email verification (Kickbox)",
+  "description": "Check whether an email address is deliverable (Kickbox).",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "email": {
+        "type": "string",
+        "description": "Email address to check."
+      }
+    },
+    "required": [
+      "email"
+    ],
+    "additionalProperties": false
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api.kickbox.com/v2/verify",
+    "query": {
+      "email": "{email}"
+    },
+    "auth": {
+      "in": "query",
+      "name": "apikey"
+    }
+  }
+}

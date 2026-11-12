@@ -4,6 +4,7 @@
   "order": 80,
   "kind": "builtin",
   "key": "hunter",
+  "category": "People & Contact Data",
   "needs_key": true,
   "capability": "find or verify one email (Hunter)",
   "description": "Find one person's business email (domain + name or LinkedIn URL) or verify an existing email address with Hunter. Returns the email, verification status and confidence score.",

@@ -174,7 +174,12 @@ export function buildEngineDeps(ctx: AppContext): EngineDeps {
 }
 
 /** Engine deps for one user: their keys (own, else shared) replace the server-wide ones. */
-export function buildEngineDepsForKeys(ctx: AppContext, keys: Record<string, string>, tools?: ToolCatalog): EngineDeps {
+export function buildEngineDepsForKeys(
+  ctx: AppContext,
+  keys: Record<string, string>,
+  tools?: ToolCatalog,
+  extra: Partial<EngineDeps> = {},
+): EngineDeps {
   return {
     ...buildEngineDeps(ctx),
     tavilyKey: keys.tavily,
@@ -191,6 +196,7 @@ export function buildEngineDepsForKeys(ctx: AppContext, keys: Record<string, str
     hunterKey: keys.hunter,
     extraKeys: keys,
     tools,
+    ...extra,
   };
 }
 

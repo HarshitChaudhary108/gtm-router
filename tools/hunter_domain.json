@@ -4,6 +4,7 @@
   "order": 70,
   "kind": "builtin",
   "key": "hunter",
+  "category": "People & Contact Data",
   "needs_key": true,
   "capability": "business emails for a domain (Hunter)",
   "description": "Find business email addresses associated with a company domain using Hunter. Returns name, title, seniority, LinkedIn URL, business email, verification status and confidence score. Use when verified emails are required.",

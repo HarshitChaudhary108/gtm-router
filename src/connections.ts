@@ -35,7 +35,29 @@ const LABELS: Record<string, string> = {
   serper: "Serper",
   apify: "Apify",
   browserbase: "Browserbase",
+  exa: "Exa",
+  prospeo: "Prospeo",
+  findymail: "Findymail",
+  ocean: "Ocean.io",
+  crustdata: "Crustdata",
+  builtwith: "BuiltWith",
+  kickbox: "Kickbox",
+  debounce: "DeBounce",
+  hubspot: "HubSpot",
+  "hubspot-write": "HubSpot (write access)",
+  dealroom: "Dealroom",
+  predictleads: "PredictLeads",
+  salesforce: "Salesforce",
 };
+
+const CATEGORY_ORDER = [
+  "Web Search, Crawling & Research",
+  "People & Contact Data",
+  "Company, Firmographic & Funding",
+  "Buying Signals (Tech, Hiring, Intent)",
+  "Email & Phone Verification",
+  "CRM",
+];
 
 const label = (slot: string): string => LABELS[slot] ?? slot.charAt(0).toUpperCase() + slot.slice(1);
 
@@ -81,6 +103,7 @@ function pageHtml(nonce: string, nangoEnabled: boolean): string {
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:24px 16px}
 main{max-width:560px;margin:0 auto}h1{font-size:24px;margin:0 0 4px}p{margin:0 0 18px;color:var(--muted)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:12px 0}
+.cat{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:14px 0 4px}.cat:first-child{padding-top:0}
 .row{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding:12px 0}.row:first-child{border-top:0}
 .name{font-weight:600}.sub{font-size:13px;color:var(--muted)}
 .tag{font-size:12px;font-weight:600;border:1px solid currentColor;border-radius:999px;padding:2px 9px;white-space:nowrap}
@@ -116,12 +139,18 @@ const TAG = { own: ["Your key", "own"], shared: ["Shared key", "shared"], none: 
 function render(state) {
   $("login").hidden = true; $("list").hidden = false;
   const rows = $("rows"); rows.textContent = "";
+  let lastCategory = "";
   for (const p of state.providers) {
+    if (p.category !== lastCategory) {
+      lastCategory = p.category;
+      const h = document.createElement("div"); h.className = "cat"; h.textContent = p.category; rows.append(h);
+    }
     const row = document.createElement("div"); row.className = "row";
     const left = document.createElement("div");
     const n = document.createElement("div"); n.className = "name"; n.textContent = p.label;
     const s = document.createElement("div"); s.className = "sub"; s.textContent = p.tools.join(" · ");
     left.append(n, s);
+    if (p.help) { const h = document.createElement("div"); h.className = "sub"; h.style.color = "var(--warn)"; h.textContent = p.help; left.append(h); }
     const right = document.createElement("div"); right.style.display = "flex"; right.style.gap = "10px"; right.style.alignItems = "center";
     const [text, cls] = TAG[p.source];
     const tag = document.createElement("span"); tag.className = "tag " + cls; tag.textContent = text; right.append(tag);
@@ -198,6 +227,11 @@ export function createConnections(deps: ConnectionsDeps) {
       }
       const user = identity.name;
       const slots = deps.catalog.keySlots();
+      const categoryOf = (slot: string): string => deps.catalog.list().find((t) => t.key === slot)?.category ?? "Other";
+      const order = (slot: string): number => {
+        const i = CATEGORY_ORDER.indexOf(categoryOf(slot));
+        return i === -1 ? CATEGORY_ORDER.length : i;
+      };
 
       if (path === "/connections/api/state" && req.method === "GET") {
         const resolved = await deps.keys.forUser(user, slots);
@@ -205,10 +239,12 @@ export function createConnections(deps: ConnectionsDeps) {
           user,
           nango: deps.keys.nangoEnabled(),
           shared_keys: deps.config.sharedKeys,
-          providers: slots.map((slot) => ({
+          providers: [...slots].sort((a, b) => order(a) - order(b)).map((slot) => ({
             id: slot,
             label: label(slot),
             source: resolved.source[slot] ?? "none",
+            category: categoryOf(slot),
+            help: deps.catalog.list().find((t) => t.key === slot)?.key_help ?? null,
             tools: [...new Set(deps.catalog.list().filter((t) => t.key === slot).map((t) => t.capability))],
           })),
         });

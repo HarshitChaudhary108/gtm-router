@@ -1,0 +1,48 @@
+{
+  "name": "custom.exa_find_similar",
+  "tool": "exa_find_similar",
+  "order": 202,
+  "kind": "http",
+  "key": "exa",
+  "category": "Web Search, Crawling & Research",
+  "needs_key": true,
+  "capability": "find similar companies or pages (Exa)",
+  "description": "Find pages or companies similar to a given URL (Exa). Useful for lookalike accounts: pass a customer's website.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "url": {
+        "type": "string",
+        "description": "Full URL, e.g. https://stripe.com."
+      },
+      "num_results": {
+        "type": "integer",
+        "description": "How many results (1-10).",
+        "minimum": 1,
+        "maximum": 10
+      }
+    },
+    "required": [
+      "url"
+    ],
+    "additionalProperties": false
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.exa.ai/findSimilar",
+    "body": {
+      "url": "{url}",
+      "numResults": "{num_results}",
+      "contents": {
+        "text": {
+          "maxCharacters": 600
+        }
+      }
+    },
+    "auth": {
+      "in": "header",
+      "name": "x-api-key"
+    },
+    "result_path": "results"
+  }
+}

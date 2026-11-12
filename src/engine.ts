@@ -13,7 +13,9 @@ import { searchYou } from "./adapters/you.js";
 import { LIMITS } from "./config.js";
 import { AppError, toAppError } from "./errors.js";
 import type { FetchLike } from "./http.js";
+import type { Proposal, ProposalStore } from "./proposals.js";
 import { ToolCatalog, runHttpTool } from "./tools.js";
+import { runInternalTool } from "./writeback.js";
 import { ACTIONS, type ActionName, type SearchProvider } from "./registry.js";
 import type { CompaniesData, ExecutionStep, PageData, PeopleData, SearchData } from "./types.js";
 import type { LookupFn } from "./url-safety.js";
@@ -33,7 +35,14 @@ export interface EngineDeps {
   hunterKey?: string;
   /** slot -> key for tools defined by a tool file (anything that is not a built-in provider). */
   extraKeys?: Record<string, string>;
+  /** slot -> extra connection fields, e.g. a Salesforce instance_url. */
+  extraMeta?: Record<string, Record<string, string>>;
   tools?: ToolCatalog;
+  /** Who is asking, and where their pending write-back proposals live. */
+  user?: string;
+  proposals?: ProposalStore;
+  /** Called with every proposal made while handling this request. */
+  onProposal?: (p: Proposal) => void;
   fetchImpl?: FetchLike;
   lookup?: LookupFn;
   retryDelayMs?: number;
@@ -221,9 +230,20 @@ async function executeHttpTool(name: string, input: unknown, deps: EngineDeps): 
   const started = Date.now();
   const tool = (deps.tools ?? fallbackCatalog).byAction(name);
   try {
-    if (!tool || tool.kind !== "http") throw new AppError("E_ROUTING", `Unknown tool "${name}"`);
-    const custom = await runHttpTool(tool, input, {
+    if (!tool || (tool.kind !== "http" && tool.kind !== "internal")) throw new AppError("E_ROUTING", `Unknown tool "${name}"`);
+    const custom = tool.kind === "internal"
+      ? await runInternalTool(tool.handler!, input, {
+          apiKey: deps.extraKeys?.[tool.key],
+          user: deps.user,
+          store: deps.proposals,
+          onProposal: deps.onProposal,
+          fetchImpl: deps.fetchImpl,
+          retryDelayMs: deps.retryDelayMs,
+          timeoutMs: deps.searchTimeoutMs ?? LIMITS.searchTimeoutMs,
+        })
+      : await runHttpTool(tool, input, {
       apiKey: deps.extraKeys?.[tool.key],
+      meta: deps.extraMeta?.[tool.key],
       fetchImpl: deps.fetchImpl,
       retryDelayMs: deps.retryDelayMs,
       timeoutMs: deps.searchTimeoutMs ?? LIMITS.searchTimeoutMs,

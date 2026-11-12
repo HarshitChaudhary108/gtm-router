@@ -4,6 +4,7 @@
   "order": 50,
   "kind": "builtin",
   "key": "apollo",
+  "category": "Company, Firmographic & Funding",
   "needs_key": true,
   "capability": "company search (Apollo)",
   "description": "Search Apollo's B2B organization database by name, domain, location, employee range or industry. Returns name, domain, industry, estimated employees, location and LinkedIn URL. Use as an alternative account source to MoltSets.",

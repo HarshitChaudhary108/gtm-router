@@ -4,6 +4,7 @@
   "order": 40,
   "kind": "builtin",
   "key": "moltsets",
+  "category": "People & Contact Data",
   "needs_key": true,
   "capability": "people and title search (MoltSets)",
   "description": "Search MoltSets' B2B people database by name, title, company or domain, seniority, department, location, industry or company size. Returns title, seniority, LinkedIn URL, business email and company. Use for finding contacts at an account. At most one call per request.",

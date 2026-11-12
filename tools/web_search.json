@@ -4,6 +4,7 @@
   "order": 10,
   "kind": "builtin",
   "key": "tavily",
+  "category": "Web Search, Crawling & Research",
   "needs_key": false,
   "capability": "web search",
   "description": "Search the public web and return a bounded list of results (title, URL, snippet, content, score). Use for discovery and research. Does not fetch full page content. Choose a provider with the provider field; tavily is the default.",

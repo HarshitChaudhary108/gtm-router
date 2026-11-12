@@ -1,0 +1,49 @@
+{
+  "name": "custom.exa_search",
+  "tool": "exa_search",
+  "order": 201,
+  "kind": "http",
+  "key": "exa",
+  "category": "Web Search, Crawling & Research",
+  "needs_key": true,
+  "capability": "semantic web search (Exa)",
+  "description": "Meaning-based web search (Exa). Good for finding companies or people by description, e.g. 'seed-stage fintechs hiring SDRs'. Returns titles, URLs and text.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "What to look for, in plain words."
+      },
+      "num_results": {
+        "type": "integer",
+        "description": "How many results (1-10).",
+        "minimum": 1,
+        "maximum": 10
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "additionalProperties": false
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.exa.ai/search",
+    "body": {
+      "query": "{query}",
+      "numResults": "{num_results}",
+      "type": "auto",
+      "contents": {
+        "text": {
+          "maxCharacters": 1200
+        }
+      }
+    },
+    "auth": {
+      "in": "header",
+      "name": "x-api-key"
+    },
+    "result_path": "results"
+  }
+}
